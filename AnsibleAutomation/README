@@ -1,0 +1,26 @@
+
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Summer 2022
+#
+Before running the playbook, you must define the local_user variable and
+the cloud dictionary variables.
+
+The local_user is the username on the laptop VM, e.g., vagrant
+The cloud variable is a dictionary defined in a variables file, e.g.,
+the supplied horizons_var.yml and chameleon_vars.yml files.
+
+Run the master as like this:
+
+ansible-playbook -e "local_user=vagrant" -e "@horizon_vars.yml" playbook_master.yml
+
+
+OR
+
+ansible-playbook -i Inventory -e "local_user=gokhale" -e "@chameleon_vars.yml" playbook_master.yml
+
+You can also provide a -i <inventory> option
+
+

@@ -1,0 +1,46 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Spring 2021
+#
+# This playbook will cleanup all kafka servers on 
+# Horizon Cloud VM or Chameleon VMs or AWS VMs
+# See https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html
+
+# We clean things in reverse order, i.e., first cleanup the brokers and then zookeeper
+
+- name: Cleanup kafka broker
+  vars:  
+    prefix: /home/{{ ansible_user }}/{{ kafka["version"] }}
+  shell: "{{ prefix }}/bin/kafka-server-stop.sh"
+  ignore_errors: yes   # because the server may have already stopped
+
+# now we give some time for brokers to cleanup
+- name: Give some time for brokers to clean up
+  wait_for:
+    timeout: 20
+
+- name: Cleanup kafka logs
+  file:
+    path: /tmp/kafka-logs
+    state: absent
+  ignore_errors: yes   # because the logs may have already been cleaned up
+
+- name: Cleanup ZooKeeper on only one of the VM machines
+  vars:  
+    prefix: /home/{{ ansible_user }}/{{ kafka["version"] }}
+  shell: "{{ prefix }}/bin/zookeeper-server-stop.sh"
+  when: ansible_facts['hostname'] == "gokhale-vm2"
+  ignore_errors: yes   # because the server may have already stopped
+
+- name: Cleanup zookeeper directory
+  file:
+    path: /tmp/zookeeper
+    state: absent
+  when: ansible_facts['hostname'] == "gokhale-vm2"
+  ignore_errors: yes   # because the logs may have already been cleaned up
+
+...
+

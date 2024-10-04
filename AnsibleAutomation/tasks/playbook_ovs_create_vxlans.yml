@@ -1,0 +1,38 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+#
+
+# In this playbook we create vxlans on every master for every team. Note that our
+# aim is to create a fully connected underlay mesh. Moreover, we need full isolation
+# between teams for connectivity from any cluster to any cluster.
+#
+# As an example, say I have a team called "instr_ta", and clusters numbered
+# cluster1 thru cluster8. Then, I will have a bridge called instr_ta_cluster<N> on all
+# the VMs of cluster<N>. Now I want a VxLAN to connect from cluster<i> to
+# cluster<j>, in that case, we generate a name for the vxlan as follows:
+# instr_ta_cluster<i>TO<j> and connect to the cluster IP gateway address of cluster <j>
+
+# Notice the nested loop. This gives rise to a list of 2-tuples: item 0 will be the
+# team name and item 1 will be the cluster master's IP. Here we have a complex
+# naming scheme.
+
+  - name: "Debug: Create fully connected underlay mesh with per team connectivity"
+    ansible.builtin.debug:
+      msg: "sudo ovs-vsctl add-port {{ item[0] }}_cluster{{ (groups[K8s['masters_inv']].index (inventory_hostname) + 1) }} {{ item[0] }}_vxlan_{{(groups[K8s['masters_inv']].index (inventory_hostname) + 1) }}TO{{(groups[K8s['masters_inv']].index (item[1]) + 1) }} -- set interface  {{ item[0] }}_vxlan_{{(groups[K8s['masters_inv']].index (inventory_hostname) + 1) }}TO{{(groups[K8s['masters_inv']].index (item[1]) + 1) }} type=vxlan options:local_ip=10.{{ (90 + groups[K8s['masters_inv']].index (inventory_hostname) + 1)|string }}.{{ (lookup('ansible.utils.index_of',data=K8s['teams'],value=item[0],test='eq') + 1)|string }}.1 options:remote_ip=10.{{ (90 + groups[K8s['masters_inv']].index (item[1]) + 1)|string }}.{{ (lookup('ansible.utils.index_of',data=K8s['teams'],value=item[0],test='eq') + 1)|string }}.1 options:key={{ item[0] }}-{{ groups[K8s['masters_inv']].index (inventory_hostname) + 1 + groups[K8s['masters_inv']].index (item[1]) + 1 }}"
+    # This is how you do nested loops
+    loop: "{{ K8s['teams'] | product (K8s['masters_fip']) | list}}"
+    # Add such condition when needed, here I added a team later on and so had to add this so it applies only to it.
+    #when: item == "instr_ta"
+    when: item[1] != inventory_hostname
+
+    # Actual operation
+  - name: "Create fully connected underlay mesh with per team connectivity"
+    ansible.builtin.shell:
+      cmd: "ovs-vsctl add-port {{ item[0] }}_cluster{{ (groups[K8s['masters_inv']].index (inventory_hostname) + 1) }} {{ item[0] }}_vxlan_{{(groups[K8s['masters_inv']].index (inventory_hostname) + 1) }}TO{{(groups[K8s['masters_inv']].index (item[1]) + 1) }} -- set interface  {{ item[0] }}_vxlan_{{(groups[K8s['masters_inv']].index (inventory_hostname) + 1) }}TO{{(groups[K8s['masters_inv']].index (item[1]) + 1) }} type=vxlan options:local_ip=10.{{ (90 + groups[K8s['masters_inv']].index (inventory_hostname) + 1)|string }}.{{ (lookup('ansible.utils.index_of',data=K8s['teams'],value=item[0],test='eq') + 1)|string }}.1 options:remote_ip=10.{{ (90 + groups[K8s['masters_inv']].index (item[1]) + 1)|string }}.{{ (lookup('ansible.utils.index_of',data=K8s['teams'],value=item[0],test='eq') + 1)|string }}.1 options:key={{ item[0] }}-{{ groups[K8s['masters_inv']].index (inventory_hostname) + 1 + groups[K8s['masters_inv']].index (item[1]) + 1 }}"
+    loop: "{{ K8s['teams'] | product (K8s['masters_fip']) | list}}"
+    when: item[1] != inventory_hostname  # do not connect to itself
+
+...

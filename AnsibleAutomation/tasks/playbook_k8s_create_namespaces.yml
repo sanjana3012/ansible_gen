@@ -1,0 +1,24 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+#
+# Here we create namespaces on each cluster for each team
+# 
+  - name: "Debug:Create K8s namespace per team"
+    ansible.builtin.debug:
+      msg: "kubectl create namespace cluster{{ (groups[K8s['masters_inv']].index (inventory_hostname) + 1)|string }}-{{ item | replace ('_','-') }}"
+    loop: "{{ K8s['teams'] }}"
+
+  - name: "Create K8s namespace per team"
+    kubernetes.core.k8s:
+#      name: "cluster{{ (groups[K8s['masters_inv']].index (inventory_hostname) + 1)|string }}-{{ item | replace ('_', '-') }}"
+      name: "{{ item }}"
+      api_version: v1
+      kind: Namespace
+      state: present
+#      wait: true
+    loop: "{{ K8s['teams'] }}"
+
+...

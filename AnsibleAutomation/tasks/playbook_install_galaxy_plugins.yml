@@ -1,0 +1,19 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+#
+# In this playbook we install Ansible galaxy plugins
+#
+
+  - name: "Install a variety of plugins via Ansible Galaxy"
+    command: ansible-galaxy collection install "{{ item }}"
+    loop:    # in the other file we used loop (which is the newer approach)
+      - community.general    # needed for apt and other packages
+      - openstack.cloud         # for Chameleon
+      - community.aws          # for AWS
+      - community.docker      # for Docker
+      - community.kubernetes  # for Kubernetes
+...
+

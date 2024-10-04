@@ -1,0 +1,29 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Summer 2022
+# Modified: Fall 2023
+# Modified: Spring 2024
+#
+  - name: "Obtain info about our Bastion on the cloud"
+    openstack.cloud.server_info:
+        cloud: "{{ cloud['name'] }}"   # this is the nickname from our clouds.yaml file
+        name: "{{ cloud['name_prefix'] }}Bastion"    # the name of the VM
+    register: result            # this is a way to store output in a variable
+
+  - name: "Save priv IP addr of Bastion"
+    ansible.builtin.add_host:
+       name: "{{ cloud['hostvars_prefix'] }}BASTION"  # used to pass values
+       ipaddr: "{{ result.servers[0]['addresses'][cloud['bastion_network'][0]][0]['addr'] }}"
+
+  - name: "Print the saved priv IP addr of Bastion"
+    ansible.builtin.debug:
+      msg: "Saved variable = {{ hostvars[cloud['hostvars_prefix']+\"BASTION\"]['ipaddr'] }}"
+
+
+... 
+

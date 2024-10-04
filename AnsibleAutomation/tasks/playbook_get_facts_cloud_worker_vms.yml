@@ -1,0 +1,43 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Summer 2022
+# Modified: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024  (separate the bastion and vm networks)
+#
+  - name: "Debug: Obtain info about our Cluster Workers on the cloud"
+    ansible.builtin.debug:
+        msg: "{{ cloud['name_prefix']  }}C{{ (item[0]+1)|string  }}W{{ (item[1]+1)|string}}"   # the name of the VM
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['workers'])) }}"
+        
+  - name: "Obtain info about our Cluster Workers on the cloud"
+    openstack.cloud.server_info:
+        cloud: "{{ cloud['name'] }}"   # this is the nickname from our clouds.yaml file
+        name: "{{ cloud['name_prefix']  }}C{{ (item[0]+1)|string  }}W{{ (item[1]+1)|string}}"  # the name of the VM
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['workers'])) }}"
+    register: result            # this is a way to store output in a variable
+
+  - name: "Save the list of Priv IP addresses for cluster workers"
+    ansible.builtin.set_fact:
+       cw_privip: "{{ cw_privip | default ([]) + [result['results'][idx].servers[0]['addresses'][cloud['vm_networks'][(idx // K8s['workers']) % cloud['vm_networks']|length]][0]['addr']] }}"
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['workers'])) }}"
+    loop_control:
+      index_var: idx
+
+  - name: "Persist the IP addresses of cluster workers in a hostvar "
+    ansible.builtin.add_host:
+       name: "{{ cloud['hostvars_prefix'] }}WORKERS"  # used to pass values
+       # If more variables are needed, add each here.
+       cw_privip: "{{ cw_privip }}"
+
+  - name: "Print the saved variable"
+    ansible.builtin.debug:
+      msg: "Saved variable = {{ hostvars[cloud['hostvars_prefix']+\"WORKERS\"]['cw_privip'] }}"
+
+... 
+

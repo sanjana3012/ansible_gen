@@ -1,0 +1,13 @@
+#
+# Author: Aniruddha Gokhale
+# CS4287: Cloud Computing
+# Created: Summer 2024
+#
+# Based on the MyInventory file used in previous use cases and courses.
+#
+#####################################################################
+# References our local VM
+#####################################################################
+[MyLocalVMs]
+127.0.0.1  ansible_connection=local
+

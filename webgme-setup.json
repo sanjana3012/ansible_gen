@@ -1,4 +1,19 @@
 {
-  "components": {},
-  "dependencies": {}
+  "components": {
+    "plugins": {
+      "variableFileGen": {
+        "src": "src/plugins/variableFileGen",
+        "test": "test/plugins/variableFileGen"
+      }
+    },
+    "seeds": {
+      "seed_1": {
+        "src": "src/seeds/seed_1"
+      }
+    }
+  },
+  "dependencies": {
+    "plugins": {},
+    "seeds": {}
+  }
 }

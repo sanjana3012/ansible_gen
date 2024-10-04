@@ -1,0 +1,30 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Summer 2022
+# Modified: Fall 2023
+#
+# This playbook is to test how to iterate thru a variable defined as a nested dictionary
+# See https://docs.ansible.com/ansible/latest/collections/openstack/cloud/server_module.html
+
+  - name: "Iterate thru the cloud dictionary"
+    ansible.builtin.debug:
+        msg:
+          - "Cloud name = {{ cloud['name'] }}"
+          - "Cloud inventory = {{ cloud['inventory'] }}"
+          - "Cloud remote user = {{ cloud['user'] }}"
+          - "Cloud image = {{ cloud['image'] }}"
+          - "Cloud bastion and master flavor = {{ cloud['master_flavor'] }}"
+          - "Cloud worker flavor = {{ cloud['worker_flavor'] }}"
+          - "Cloud Bastion key = {{ cloud['bastion_key'] }}"
+          - "Cloud VM key = {{ cloud['vm_key'] }}"
+          - "Cloud bastion security groups = {{ cloud['bastion_security_groups'] }}"
+          - "Cloud vm security groups = {{ cloud['vm_security_groups'] }}"
+#          - "Cloud netid = {{ cloud['netid'] }}"
+          - "Cloud bastion network = {{ cloud['bastion_network'] }}"
+          - "Cloud vm networks = {{ cloud['vm_networks'] }}"
+          - "Cloud Bastion floating ip = {{ cloud['bastion_fip'] }}"
+...

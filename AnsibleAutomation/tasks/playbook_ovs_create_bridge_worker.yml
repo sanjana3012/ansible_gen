@@ -1,0 +1,25 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+#
+
+# In this playbook we create a open virtual switch bridge on each cluster worker
+
+  - name: "Debug: Create ovs bridge per team per cluster worker"
+    ansible.builtin.debug:
+      msg: "sudo ovs-vsctl add-br {{ item }}_cluster{{ ((groups[K8s['workers_inv']].index (inventory_hostname) // K8s['workers']) + 1) }}"
+    loop: "{{ K8s['teams'] }}"
+    # Add such condition when needed, here I added a team later on
+    #when: item == "instr_ta"
+
+  - name: "Create a new ovs bridge per team per cluster worker"
+    openvswitch.openvswitch.openvswitch_bridge:   
+      bridge: "{{ item }}_cluster{{ ((groups[K8s['workers_inv']].index (inventory_hostname) // K8s['workers']) + 1) }}"
+      state: present
+    loop: "{{ K8s['teams'] }}"
+    # Add such condition when needed, here I added a team later on
+    #when: item == "instr_ta"
+
+...

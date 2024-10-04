@@ -1,0 +1,119 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+#
+  - name: "Install underlying packages needed for couchdb"
+    apt:
+      name: "{{ item }}"
+      state: latest
+      update_cache: yes
+    loop:
+      - build-essential
+      - gnupg
+      - ca-certificates
+      - pkg-config
+      - erlang
+      - libicu-dev
+# this package no longer exists
+#      - libmozjs185-dev
+      - libcurl4-openssl-dev
+    become: yes
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  # note that the command module will not get the pipe operator to work and
+  # so we need the shell module.  Although this works, I am using a built in
+  # module below.
+  #- name: Update apt repository
+  #  shell: echo "deb https://apache.bintray.com/couchdb-deb bionic main" | sudo tee /etc/apt/sources.list.d/couchdb.list
+
+  # ** For some reason, the following does not work ***
+  # let us use the community general package to update the apt repo instead
+  # of the above shell approach
+  #- name: Add couchdb repository to apt
+  #  community.general.apt_repo:
+  #    repo: https://apache.bintray.com/couchdb-deb
+  #    state: present
+  #    update: yes
+
+  - name: Add couch db repository to apt
+    apt_repository:
+      repo: "deb https://apache.bintray.com/couchdb-deb bionic main"
+      state: present
+      filename: couchdb.list
+      update_cache: no  # we do not update cache as the signing key is not added yet.
+    become: yes
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+     
+  - name: Add Apt Key for couchdb
+    apt_key:
+      keyserver: keyserver.ubuntu.com
+      id: 8756C4F765C9AC3CB6B85D62379CE192D401AB61
+      state: present   # this is default
+    become: yes
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  # This will install couchdb without any admin, etc.
+  - name: Install CouchDB
+    apt:
+      name: "{{ item }}"
+      state: latest
+      update_cache: yes
+    loop:
+      - couchdb
+    become: yes
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  # This is somewhat of a hack approach to get this to work
+  # But the use of lineinfile is correct. We have to do this for multiple lines.
+  
+  - name: Update CouchDB's local.ini file. Here, update the port (uncomment)
+    lineinfile:
+      path: /opt/couchdb/etc/local.ini
+      firstmatch: yes   # as such there will be only one instance of this
+      regexp: "^;port"
+      line: port = 5984
+    become: yes   # must do it as sudo
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  - name: Update CouchDB's local.ini file. Here, update the bind address
+    lineinfile:
+      path: /opt/couchdb/etc/local.ini
+      firstmatch: yes   # as such there will be only one instance of this
+      regexp: "^;bind_address"
+      line: bind_address = 0.0.0.0
+    become: yes   # must do it as sudo
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  - name: Update CouchDB's local.ini file. Here, update the admin's password
+    lineinfile:
+      path: /opt/couchdb/etc/local.ini
+      firstmatch: yes   # as such there will be only one instance of this
+      regexp: "^;admin"
+      line: admin = cl0udc0uchdb
+    become: yes   # must do it as sudo
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  - name: Update CouchDB's local.ini file. Here, make it a standalone DB
+    blockinfile:
+      path: /opt/couchdb/etc/local.ini
+      insertafter: EOF   # this is default
+      marker: "; {mark} ANSIBLE MANAGED BLOCK"    # comment starts with ; in local.ini
+      block: |
+        [cluster]
+        n = 1
+    become: yes   # must do it as sudo
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+
+  # Restart the db service because the default installation does not have any
+  # admin user
+  - name: Restart CouchDB service
+    become: yes
+    systemd:
+      name: couchdb
+      state: restarted
+      daemon_reload: yes    # so it reads the new configuration
+    when: ansible_facts['hostname'] == "gokhale-vm3"
+...
+

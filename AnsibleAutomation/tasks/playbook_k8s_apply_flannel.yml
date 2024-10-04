@@ -1,0 +1,34 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networking
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+# Modified: Spring 2024
+#
+# Here we apply flannel to the clusters
+
+  # since the operations are all to be performed by root,
+  # we assume this will be invoked with become: yes
+  # Moreover, we add a condition so that this is attempted by the
+  # primary replica master of each cluster only
+
+  - name: "Download the flannel manifest"
+    ansible.builtin.get_url:
+      url: https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+      dest: /home/{{ cloud['user'] }}/flannel.yaml
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  - name: "Apply flannel to the cluster"
+    kubernetes.core.k8s:
+      state: present
+      src: /home/{{ cloud['user'] }}/flannel.yaml
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  - name: "Remove the downloaded yaml file"
+    ansible.builtin.file:
+      path: /home/{{ cloud['user'] }}/flannel.yaml
+      state: absent
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+...

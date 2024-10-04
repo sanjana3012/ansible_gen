@@ -1,0 +1,45 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+# Modified: Spring 2024
+#
+# Here we retrieve the join command and save it for workers to use.
+# Run these commands only on the primary replica masters of each cluster
+# 
+  - name: "Retrieve cluster join command"
+    ansible.builtin.shell:
+      cmd: kubeadm token create --print-join-command
+    register: join_cmd
+    become: yes
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  - name: "Set the file name"
+    ansible.builtin.set_fact:
+      fname: "/home/{{ cloud['user'] }}/join_cmd{{ ((groups[K8s['masters_inv']].index (inventory_hostname) // K8s['masters']) + 1)|string }}.sh"
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+      
+  - name: "Delete any existing command file"
+    ansible.builtin.file:
+      path: "{{ fname }}"
+      state: absent
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+      
+  - name: "Add shell bang in the file"
+    ansible.builtin.lineinfile:
+      path: "{{ fname }}"
+      create: true # if does not exist
+      insertafter: EOF
+      line: "#!/bin/sh"
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+      
+  - name: "Now add the join command in the file"
+    ansible.builtin.lineinfile:
+      path: "{{ fname }}"
+      insertafter: EOF
+      line: "{{ join_cmd.stdout }} "
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+      
+...

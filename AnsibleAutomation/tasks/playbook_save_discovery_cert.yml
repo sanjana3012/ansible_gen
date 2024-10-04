@@ -1,0 +1,24 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Summer 2022
+#
+
+# To join a K8s cluster, the worker node needs the discovery token
+# cert hash. Here is a way to retrieve it. We save it in our dummy
+# hostvar
+# Soln found here: https://github.com/kubernetes/kubeadm/issues/659
+
+  - name: "Retrieve certificate info"
+    community.crypto.x509_certificate_info:
+      path: /etc/kubernetes/pki/ca.crt
+    register: cert
+
+  - name: "Save discovery certificate token for later use"
+    ansible.builtin.add_host:
+       name: "K8S_MASTER"  # used to pass values
+       # If more variables are needed, add each here.
+       discovery_cert: "sha256:{{ cert.public_key_fingerprints.sha256 | replace(':', '') }}"
+
+...

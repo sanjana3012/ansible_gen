@@ -1,0 +1,47 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+# Modified: Spring 2024
+#
+# In this playbook we have the worker node join the cluster.
+# In our new approach, we find out what is the index number in our inventory and then decide
+# what cluster we will go to
+
+  # First determine what cluster we will be allocated to and accordingly copy the join command file
+  # to there
+  - name: "Obtain the cluster number and the file that contains the join command"
+    ansible.builtin.set_fact:
+      fname: "join_cmd{{ ((groups[K8s['workers_inv']].index (inventory_hostname) // K8s['workers']) + 1)|string }}.sh"
+
+  # this is only for debugging purposes
+  - name: "Debug: what cluster file are we going to download"
+    ansible.builtin.debug:
+      msg: "This host {{ ansible_host }} will need file {{ fname }}"
+
+  # remove any older version of the file
+  - name: "Remove any older version of the file"
+    ansible.builtin.file:
+      path: "/home/{{ cloud['user'] }}/{{ fname }}"
+      state: absent
+
+  # Recall that the shell command file was on the control machine. It has to be  copied here.
+  - name: "Copy appropriate join command file to remote host"
+    ansible.builtin.copy:
+      src: "./{{ fname }}"
+      dest: "/home/{{ cloud['user'] }}/{{ fname }}"
+      mode: u=rwx,g=r,o=r
+
+  # Set the path of the file
+  - name: "Set target file name to execute"
+    ansible.builtin.set_fact:
+      fname: "/home/{{ cloud['user'] }}/{{ fname }}"
+
+  # Since it has a shell command, just execute it.
+  - name: "Execute the join command"
+    ansible.builtin.shell:
+      cmd: "/bin/sh {{ fname }}"
+    become: yes   # as root
+...

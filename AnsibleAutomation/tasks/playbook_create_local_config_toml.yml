@@ -1,0 +1,52 @@
+#
+# Author: Aniruddha Gokhale
+# CS 4287/5287: Principles of Cloud Computing
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Created: Summer 2024
+#
+
+# The goal of this playbook is to create a local version of the config.toml file and
+# make the required modifications.
+
+# first delete any existing file
+  - name: "delete any existing local copy of config.toml file"
+    ansible.builtin.file:
+      path: ./config.toml
+      state: absent
+
+# create a new local copy
+  - name: "Create a new copy of local config.toml"
+    ansible.builtin.shell:
+      cmd: containerd config default > ./config.toml
+
+# replace sandbox version to 3.9 from 3.6
+  - name: "replace sandbox image version from 3.6 to 3.9"
+    ansible.builtin.replace:
+      path: "./config.toml"
+      regexp: "pause:3.6"
+      replace: 'pause:3.9'
+
+# Set SystemdCgroup = true
+  - name: "Set SystemdCgroup = true"
+    ansible.builtin.replace:
+      path: "./config.toml"
+      regexp: "SystemdCgroup = false"
+      replace: "SystemdCgroup = true"
+
+
+  - name: "set a fact to contain a double quote (could not directly use literal double quote)"
+    ansible.builtin.set_fact:
+      quote: '"'
+      
+  - name: "update config.toml file with private registry info"
+    ansible.builtin.lineinfile:
+      path: "./config.toml"
+      insertafter: \[plugins.\"io.containerd.grpc.v1.cri\".registry.mirrors\]
+      firstmatch: true
+      line:  "         [plugins.{{ quote }}io.containerd.grpc.v1.cri{{ quote }}.registry.mirrors.{{ quote }}{{ item }}:{{ Docker['priv_reg_port'] }}{{ quote }}] endpoint = [{{ quote }}http://{{ item }}:{{ Docker['priv_reg_port'] }}{{ quote }}]"
+    loop: "{{ groups [K8s['masters_inv']] }}"
+    loop_control:
+      index_var: idx
+
+...

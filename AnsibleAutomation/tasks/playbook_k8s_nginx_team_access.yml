@@ -1,0 +1,27 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+#
+
+# In this playbook we grant all teams rbac access to nginx-ingress namespace
+#
+  - name: "Copy the rbac granting capability to remote machine"
+    ansible.builtin.copy:
+      src: "./IngressSetup"
+      dest: "/home/{{ cloud['user'] }}/"
+    
+  - name: "Provide RBAC rules for all teams"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/IngressSetup/nginx-teams-rbac.yml"
+
+  - name: "Provide access to nginx-ingress namespace all teams"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/IngressSetup/nginx-teams-grant.yml"
+
+
+...      
+      

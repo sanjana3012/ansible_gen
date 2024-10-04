@@ -1,0 +1,20 @@
+---
+#
+# Author: Aniruddha Gokhale
+# CS/ECE 4383/5383: Computer Networks
+# CS 4287/5287: Cloud Computing
+# CS 6381: Distributed Systems
+# Created: Fall 2024
+#
+# In this playbook we download binary distribution for
+# Kafka
+#
+
+# Download the Kafka distribution
+  - name: "Download Kafka distribution"
+    ansible.builtin.get_url:
+      url: "{{ Kafka['url'] }}/{{ Kafka['version'] }}/kafka_2.13-{{ Kafka['version'] }}.tgz"
+      dest: "/home/{{ local_user }}/Downloads/kafka_2.13-{{ Kafka['version'] }}.tgz"
+      force: false # this is default; if file exists, then it will not be downloaded
+
+

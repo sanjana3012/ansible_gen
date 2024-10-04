@@ -1,0 +1,44 @@
+---
+#
+# Author: Aniruddha Gokhale
+# CS/ECE 4383-5383 Computer Networks
+# CS 6381 Distributed Systems Principles
+# CS 4287-5287 Principles of Cloud Computing
+# Created: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024
+#
+# This master is based on an automation suite of this kind built previously for the
+# Cloud and Computer Networking class. But this time we are creating a more elaborate
+# environment
+#
+
+#####################################################
+### Play 16: Install Kafka on our Cloud VMs
+#
+#####################################################
+- name: "Play 16a - Download kafka locally"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: false  # no need here.
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_download_kafka.yml
+
+- name: "Play 16b - Install Kafka on Cloud VMs"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: false  # we set it per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_install_kafka.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+...
+

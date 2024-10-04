@@ -1,0 +1,16 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Spring 2021
+# Modified: Summer 2022
+#
+# In this playbook we copy kubernetes deploy files from our example
+#
+  - name: "Copy K8s example yaml files to destination (master)"
+    ansible.builtin.copy:
+      src: ./Kubernetes_Docker
+      dest: "/home/{{ cloud['user'] }}/"
+
+...

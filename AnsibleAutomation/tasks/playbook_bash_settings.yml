@@ -1,0 +1,13 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Spring 2021
+#
+# In this playbook we copy common bash settings for the VMs
+#
+  - name: "Copy bash alias file"
+    ansible.builtin.copy:
+      src: /home/{{ local_user }}/.bash_aliases
+      dest: "/home/{{ cloud['user'] }}/.bash_aliases"
+...

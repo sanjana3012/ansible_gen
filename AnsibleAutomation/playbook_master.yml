@@ -1,0 +1,805 @@
+---
+#
+# Author: Aniruddha Gokhale
+# CS/ECE 4383-5383 Computer Networks
+# CS 6381 Distributed Systems Principles
+# CS 4287-5287 Principles of Cloud Computing
+# Created: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024
+#
+# This master is based on an automation suite of this kind built previously for the
+# Cloud and Computer Networking class. But this time we are creating a more elaborate
+# environment
+#
+
+#####################################################
+### Play 0a: check if required variables are defined or not. If not defined
+#     then simply exit the entire play
+#
+#####################################################
+- name: "Check for the presence of fundamental variables that drive the deployment"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # this is chicken egg issue as we test if the var is defined
+  gather_facts: no
+  collections:
+  - ansible-base
+
+  tasks:
+  - import_tasks: tasks/playbook_check_variables.yml
+
+#####################################################
+### Play 0b: Dummy to just print the vars
+#
+#####################################################
+- name: "Print the discovered fundamental variables that drive the deployment"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is vagrant for our VM
+  collections:
+  - ansible-base
+  tasks:
+  - import_tasks: tasks/playbook_print_variables.yml
+
+#####################################################
+### Play 0c: Iterate thru dict
+#
+#####################################################
+- name: "Iterate thru dictionary of supplied variables"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is vagrant for our VM
+  collections:
+  - ansible-base
+  tasks:
+    - import_tasks: tasks/playbook_iterate_nested_dict.yml
+
+#####################################################
+### Play 2A: Create VMs
+#
+# Whether to create on horizon or chameleon or both should really
+# come thru either a parameter or var file or such
+#####################################################
+- name: "Play 2A: Create VMs on Chameleon or Horizon"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is vagrant for our VM
+  gather_facts: no 
+  become: false            # No need for sudo as we are not installing anything
+  collections:
+  - ansible-base
+  - openstack.cloud.collection
+  
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_create_cloud_bastion_vm.yml
+  - import_tasks: tasks/playbook_create_cloud_master_vms.yml
+  - import_tasks: tasks/playbook_create_cloud_worker_vms.yml
+
+#####################################################
+### Play 2B: Get facts from local VM
+#
+#####################################################
+- name: "Play 2B: Perform fact gathering on local VM"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is vagrant for our VM
+
+  gather_facts: yes          # We ask Ansible to collect all facts
+  become: false
+  collections:
+  - ansible-base
+  - openstack.cloud.collection
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_get_facts_local_vm.yml
+
+#####################################################
+### Play 2C: Get facts from Cloud VM
+#
+#####################################################
+- name: "Play 2C: Perform fact gathering on all Cloud VMs"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is vagrant for our VM
+
+  gather_facts: no
+  become: false
+  collections:
+  - ansible-base
+  - openstack.cloud.collection
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_get_facts_cloud_bastion_vm.yml
+  - import_tasks: tasks/playbook_get_facts_cloud_master_vms.yml
+  - import_tasks: tasks/playbook_get_facts_cloud_worker_vms.yml
+
+#####################################################
+### Play 2D: Visit all VMs
+#
+#####################################################
+- name: "Play 2D:  Visit all Cloud VMs"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # this is chicken egg issue as we test if the var is defined
+  gather_facts: no
+  become: false
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_save_priv_ipaddrs_masters.yml
+  - import_tasks: tasks/playbook_save_priv_ipaddrs_workers.yml
+  
+#####################################################
+### Play 2E: Retrieve saved IP addresses of VMs into a hostvars
+#
+# The goal is that Play 2C is expensive and so had saved the list of IP addresses so we
+# can then read it locally. We have to do this because we are running our Master playbook
+# step by step
+#####################################################
+# Not needed anymore
+# - name: "Play 2E:  Retrieve IP addresses of VMs from a file into hostvars"
+#   hosts: MyLocalVMs
+#   remote_user:  "{{ local_user }}"      # note that the user is vagrant for our VM
+#   gather_facts: no
+#   become: false
+#   collections:
+#   - ansible-base
+#   - openstack.cloud.collection
+
+#   tasks:    # the task to be performed
+#   - name: "Show contents of file"
+#     ansible.builtin.debug:
+#       msg: "Contents = lookup ('ansible.builtin.file', './ipaddrs.txt') "
+      
+#   - name: "Retrieve saved list of IP addresses from local file"
+#     # found the solution about the lookup plugin and the splitlines () function
+#     # on the web
+#     ansible.builtin.set_fact:
+#        ipaddrs: "{{ ipaddrs | default ([]) + [item] }}"
+#     loop: "{{ lookup ('ansible.builtin.file', './ipaddrs.txt').splitlines () }}"
+
+#   - name: "Maintain a hostvars for all VM private IP addresses"
+#     ansible.builtin.add_host:
+#        name: "COMPNW_IPADDRS"  # used to pass values
+#        # If more variables are needed, add each here.
+#        ipaddrs: "{{ ipaddrs }}"
+
+#   - name: "Print saved IP addresses"
+#     ansible.builtin.debug:
+#        msg: "Retrieved IP addresses: {{ hostvars['COMPNW_IPADDRS']['ipaddrs'] }}" 
+
+#####################################################
+###  Play 3: Bash settings
+#
+#####################################################
+- name: "Play 3 - Bash settings"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_bash_settings.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 4: Install packages on our Cloud VMs
+#
+# This includes apt packages like: python3, pip3, Java 11
+# python packages like openstacksdk, kafka-python, couchdb
+# though openstacksdk is not needed on cloud VMs
+#####################################################
+- name: "Play 4 - Install various packages on Cloud VMs"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we set it here instead of doing per task
+  gather_facts: no
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  #- import_tasks: tasks/playbook_upgrade_packages.yml
+  #  when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+  - import_tasks: tasks/playbook_install_apt_packages.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+  - import_tasks: tasks/playbook_install_pip_packages.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 5: Install Docker on our Cloud VMs
+#
+#####################################################
+- name: "Play 5 - Install Docker on Cloud VMs"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: yes   # we will need to get variety of facts like arch, OS release
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_install_docker.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 6: Install Kubernetes on our Cloud VMs
+#
+#####################################################
+- name: "Play 6 - Install Kubernetes on Cloud VMs"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_install_kubernetes.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 7: Install Open Virtual Switch on our Cloud VMs
+#
+#####################################################
+- name: "Play 7a - Download ovs and unbound sources"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: false  # no need here.
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_download_ovs.yml
+
+- name: "Play 7b - Install Open Virtual Switch on Cloud VMs"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: false  # we set it per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_install_ovs.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 8: Set firewalld rules (particularly on chameleon)
+# Required for all the K8s and Docker ports
+#####################################################
+
+# The ansible documentation suggests that this package be installled but
+# it is not available.
+#
+# - name: "Play 8a - Packages for Firewalld policies"
+#   hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+#   remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+#   become: true  # we set it here instead of doing per task
+#   gather_facts: no
+#   collections:
+#   - ansible-base
+#   - community.general
+
+#   tasks:    # the task to be performed
+#   - name: "Install python packages needed firewalld"
+#     pip:
+#       name: "{{ item }}"
+#       state: latest
+#     loop:    # in the other file we used loop (which is the newer approach)
+#       - python3-firewall   # package for firewalld
+
+- name: "Play 8b - Enable and start Firewalld (in case it is inactive)"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we set it here instead of doing per task
+  gather_facts: false
+  collections:
+  - ansible-base
+  - community.general
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_start_firewalld.yml
+
+- name: "Play 8c - Firewalld policies"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we set it here instead of doing per task
+  gather_facts: true
+  collections:
+  - ansible-base
+  - community.general
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_set_firewalld_rules.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+####################################################
+### Play 9: Add Insecure private docker registries in each master machine
+#
+# We break this play into multiple parts because we need to use the
+# private IP address of the master to which the workers can talk to.
+# To that end, we need to save the info in a variable and then pass
+# it to a diff playbook. This is somewhat hard to do as different plays
+# can work on different hosts. So we have to now create some dummy host
+# and let it save the variable. Then we can access that variable from
+# hostvars of that dummy. I found this trick on the web. Wow !!
+####################################################
+
+- name: "Play 9A - Add Insecure Private Docker Registry info in local daemon.json file"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: no  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_docker_create_daemon_json_wpriv_registry.yml
+
+- name: "Play 9B - Update daemon.json file on all cluster nodes"
+  hosts: "{{ cloud['inventory'] }}"  
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # as we manipulate /etc/docker directory
+  gather_facts: no
+  collections:
+  - ansible-base
+   
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_docker_copy_daemon_json.yml
+
+- name: "Play 9C - Restart Docker on all cluster nodes"
+  hosts: "{{ cloud['inventory'] }}"  
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # as we manipulate /etc/docker directory
+  gather_facts: no
+  collections:
+  - ansible-base
+   
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_restart_docker.yml
+
+- name: "Play 9D - Start private registry on master nodes"
+  hosts: "{{ K8s['masters_inv'] }}"  
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no  # we don't need this either.
+  collections:
+  - ansible-base
+  - community.docker
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_docker_start_priv_registry.yml
+
+#####################################################
+### Play 10: Restart containerd with a new config.toml file as Kubernetes does not
+# find a container runtime by default based on what is running on the nodes
+#
+#####################################################
+
+- name: "Play 10A - Create a new local config.toml file with updated settings"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: no  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_create_local_config_toml.yml
+
+- name: "Play 10B - Delete old config.toml file on remote machines"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_delete_config_toml.yml
+
+- name: "Play 10C - Copy updated config.toml file"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_copy_config_toml.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+- name: "Play 10D - Restart containerd"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+#  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_restart_containerd.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+- name: "Play 10E - Restart docker"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+#  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_restart_docker.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 11: Turn swap off on cloud VMs
+# Note that K8s cannot work without this :-(
+#####################################################
+- name: "Play 11 - Turn swap off on cloud vms"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_cloud_vm_swapoff.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 12: Update /etc/hosts file
+#
+#####################################################
+- name: "Play 12 - Update /etc/hosts in K8s masters"
+  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: true  # we set it here instead of doing per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_update_etchosts.yml
+#    when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play 13: Start kubernetes cluster
+#
+#####################################################
+
+#### Play 13A
+- name: "Play 13A: First, reset any previous K8s cluster on all worker VMs"
+  hosts: "{{ K8s['workers_inv'] }}[0:{{ (K8s['clusters']*K8s['workers'] - 1) }}]"    # specified in the MyInventory file. We had to modify the logic in case we want to limit the operations on a subset of clusters.
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  #become: true  # We let the individual tasks handle this
+  gather_facts: true   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_reset_firewalld_rules.yml
+  - import_tasks: tasks/playbook_k8s_reset_cluster.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#### Play 13B
+- name: "Play 13B: Next, reset any previous K8s cluster on all master VMs"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"    # specified in the MyInventory file. We had to modify the logic in case we want to limit the operations on a subset of clusters.
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  #become: true  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_reset_cluster.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#### Play 13C
+- name: "Play 13C:  Start a new K8s clusters on designated masters"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  #become: true  # we do this per individual task
+  gather_facts: yes # we need this to map public IP to private IP
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_start_cluster.yml
+
+#### Play 13D
+- name: "Play 13D:  Apply Flannel or Calico"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  #become: true  # we do this per individual task
+  gather_facts: no 
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_apply_flannel.yml
+    when: "K8s['cni'] == 'flannel'"
+  
+  - import_tasks: tasks/playbook_k8s_apply_calico.yml
+    when: "K8s['cni'] == 'calico'"
+
+  - import_tasks: tasks/playbook_k8s_apply_canal.yml
+    when: "K8s['cni'] == 'canal'"
+
+#### Play 13E: restart container runtimes else some cni pods get stuck
+- name: "Play 13E:  Restart container runtimes"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we do this per individual task
+  gather_facts: no # we need this to map public IP to private IP
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_restart_containerd.yml
+  - import_tasks: tasks/playbook_restart_docker.yml
+
+#### Play 13F
+- name: "Play 13F:  Introduce some pause due to potential delay in getting kube-system pods up"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  #become: true  # we do this per individual task
+  gather_facts: no 
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - name: "Introduce artificial delay"
+    ansible.builtin.pause:
+      seconds: 40
+
+#### Play 13G
+- name: "Play 13G:  Obtain cluster join command"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: false  # we do this per individual task
+  gather_facts: no 
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_create_join_cmd.yml
+
+#### Play 13H
+- name: "Play 13H:  Fetch individual join command files"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: false  # we do this per individual task
+  gather_facts: no 
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_fetch_joincmd_file.yml
+
+#### Play 13I (I guess not needed anymore)
+# - name: "Play 13I:  Modify various configs (currently a hack)"
+#   hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+#   remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+#   become: true  # must be done as root
+#   gather_facts: no 
+#   collections:
+#   - ansible-base
+
+#   tasks:    # the task to be performed
+#   - import_tasks: tasks/playbook_k8s_update_config.yml
+
+#####################################################
+### Play 14: Join nodes to kubernetes masters
+#
+#####################################################
+
+#### Play 14A: join worker nodes to the cluster
+- name: "Play 14A - Join kubernetes cluster as worker node"
+  hosts: "{{ K8s['workers_inv'] }}[0:{{ (K8s['clusters']*K8s['workers'] - 1) }}]"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_join_cluster_as_worker.yml
+# Add a condition like this when something fails in a host. Else put all failed
+# nodes in the ReDo list and update the hosts: value.
+    #when: ansible_host == "172.16.4.190"
+      
+#### Play 14B: restart container runtimes on master
+- name: "Play 14B:  Restart container runtimes on master"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we do this per individual task
+  gather_facts: no # we need this to map public IP to private IP
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_restart_containerd.yml
+  - import_tasks: tasks/playbook_restart_docker.yml
+
+#### Play 14C
+- name: "Play 14C:  Restart container runtimes on workers"
+  hosts: "{{ K8s['workers_inv'] }}[0:{{ (K8s['clusters']*K8s['workers'] - 1) }}]"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we do this per individual task
+  gather_facts: no # we need this to map public IP to private IP
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_restart_containerd.yml
+  - import_tasks: tasks/playbook_restart_docker.yml
+
+#####################################################
+### Play 15: Create Namespaces and Directories for all teams on all clusters
+#
+#####################################################
+
+- name: "Play 15A: Delete any prior namespaces per team per cluster"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: false  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_delete_namespaces.yml
+
+ ########
+- name: "Play 15B: Create namespaces per team per cluster"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: false  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_create_namespaces.yml
+
+  #######
+- name: "Play 15C: Create directories per team per cluster"
+  hosts: "{{ K8s['masters_inv'] }}[0:{{ (K8s['clusters']*K8s['masters'] - 1) }}]"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: false  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_create_dirs.yml
+
+#####################################################
+### Play 15: Install and Configure Nginx Ingress
+#
+#####################################################
+#### Play 15A
+- name: "Play 15A: Install Nginx Ingress"
+  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: false  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_k8s_nginx_ingress.yml
+
+
+#####################################################
+### Play 15: Create OVS Bridges and VxLANs
+#
+#####################################################
+#### Play 15A
+- name: "Play 14A: Delete existing OVS bridges per team on cluster masters"
+  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_ovs_delete_bridge_master.yml
+
+#### Play 15B
+- name: "Play 15B:  Delete existing OVS bridge per team per cluster worker"
+  hosts: "{{ K8s['workers_inv'] }}"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we do this per individual task
+  gather_facts: no # we need this to map public IP to private IP
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_ovs_delete_bridge_worker.yml
+#    ansible.builtin.meta: noop
+
+#### Play 15C
+- name: "Play 15C: Create OVS bridges per team on cluster masters"
+  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_ovs_create_bridge_master.yml
+
+#### Play 15D
+- name: "Play 15D:  Create OVS bridge per team per cluster worker"
+  hosts: "{{ K8s['workers_inv'] }}"       # specified in our vars yaml file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we do this per individual task
+  gather_facts: no # we need this to map public IP to private IP
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_ovs_create_bridge_worker.yml
+#    ansible.builtin.meta: noop
+
+#### Play 15E
+- name: "Play 15E: Create VxLANs between each cluster "
+  hosts: "{{ K8s['masters_inv'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # We let the individual tasks handle this
+  gather_facts: no   # we may need this for reasons like machine arch etc
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_ovs_create_vxlans.yml
+
+#####################################################
+### Play 16: Install Kafka on our Cloud VMs
+#
+#####################################################
+- name: "Play 16a - Download kafka locally"
+  hosts: MyLocalVMs          # specified in the MyInventory file
+  remote_user:  "{{ local_user }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: false  # no need here.
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_download_kafka.yml
+
+- name: "Play 16b - Install Kafka on Cloud VMs"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  gather_facts: no
+  become: false  # we set it per task
+  collections:
+  - ansible-base
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_install_kafka.yml
+    #when: " ansible_host in hostvars['COMPNW_IPADDRS']['ipaddrs'] "
+
+#####################################################
+### Play Optional: Stop and disable firewalld
+#####################################################
+
+- name: "Play Optional- Stop and Disable Firewalld policies"
+  hosts: "{{ cloud['inventory'] }}"          # specified in the MyInventory file
+  remote_user:  "{{ cloud['user'] }}"      # note that the user is cc on Chameleon
+  become: true  # we set it here instead of doing per task
+  gather_facts: false
+  collections:
+  - ansible-base
+  - community.general
+
+  tasks:    # the task to be performed
+  - import_tasks: tasks/playbook_stop_firewalld.yml
+
+...
+

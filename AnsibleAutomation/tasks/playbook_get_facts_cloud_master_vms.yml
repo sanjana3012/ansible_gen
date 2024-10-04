@@ -1,0 +1,49 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Summer 2022
+# Modified: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024  (separate the bastion and vm networks)
+#
+  - name: "Debug: Obtain info about our Cluster Masters on the cloud"
+    ansible.builtin.debug:
+        msg: "Finding info about {{ cloud['name_prefix'] + \"C\" + (idx // K8s['masters'] + 1)|string + \"M\" + (idx % K8s['masters'] + 1)|string }}"  # name of the VM
+#    loop: "{{ range (K8s['clusters'] ) }}"
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['masters'])) }}"
+    loop_control:
+      index_var: idx
+        
+  - name: "Obtain info about our Cluster Masters on the cloud"
+    openstack.cloud.server_info:
+        cloud: "{{ cloud['name'] }}"   # this is the nickname from our clouds.yaml file
+        name: "{{ cloud['name_prefix'] + \"C\" + (idx // K8s['masters'] + 1)|string + \"M\" + (idx % K8s['masters'] + 1)|string }}"     # the name of the VM
+#    loop: "{{ range (K8s['clusters'] ) }}"
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['masters'])) }}"
+    loop_control:
+      index_var: idx
+    register: result            # this is a way to store output in a variable
+
+  - name: "Save the list of Priv IP addresses for cluster masters"
+    ansible.builtin.set_fact:
+       cm_privip: "{{ cm_privip | default ([]) + [result['results'][idx].servers[0]['addresses'][cloud['vm_networks'][(idx // K8s['masters']) % cloud['vm_networks']|length]][0]['addr']] }}"
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['masters'])) }}"
+    loop_control:
+      index_var: idx
+
+  - name: "Persist the IP addresses of cluster masters in a hostvar "
+    ansible.builtin.add_host:
+        name: "{{ cloud['hostvars_prefix'] }}MASTERS"  # used to pass values
+        # If more variables are needed, add each here.
+        cm_privip: "{{ cm_privip }}"
+
+  - name: "Print the saved variable"
+    ansible.builtin.debug:
+      msg: "Saved variable = {{ hostvars[cloud['hostvars_prefix']+\"MASTERS\"]['cm_privip'] }}"
+
+... 
+

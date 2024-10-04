@@ -1,0 +1,24 @@
+#
+# Author: Aniruddha Gokhale
+# CS4383-5383 Computer Networks
+# CS6381 Distributed Systems Principles
+# CS4287-5287 Cloud Computing
+# Created: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024
+#
+# Based on the MyInventory file used in previous use cases and courses.
+#
+
+######################################################################
+# Used to indicate which host are we choosing as our bastion host
+######################################################################
+[Bastion]
+129.114.27.250
+
+[Bastion:vars]
+ansible_user=cc
+ansible_connection=ssh
+ansible_ssh_private_key_file=/home/gokhale/.ssh/F24_BASTION.pem
+
+

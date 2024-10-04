@@ -1,0 +1,17 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+#
+# Here we create directories on each cluster master for each team
+# so they they can dump their 
+# 
+  - name: "Create Directory per team on each cluster master"
+    ansible.builtin.file:
+      path: "/home/{{ cloud['user'] }}/{{ item }}"
+      state: directory
+      mode: '0755'
+    loop: "{{ K8s['teams'] }}"
+
+...

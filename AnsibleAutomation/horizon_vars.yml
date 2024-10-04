@@ -1,0 +1,85 @@
+# In this file we define a dictionary of cloud variables for Chameleon
+# version of ubuntu
+ubuntu:
+    version: jammy
+    arch: amd64
+
+# K8s cluster dictionary.
+K8s:
+    masters_inv: K8s_Masters   # our inventory file
+    workers_inv: K8s_Workers   # our inventory file
+    clusters: 8   # these many clusters and hence that many masters
+    workers: 5   # 5 workers per cluster 
+    masters_fip:  # 8 of them for the 8 clusters; each cluster will have 5 workers. We have upper limit of 120 vCPUs in Chameleon project.  Each master will have a cluster name and reachable by its floating IP addr
+        - 129.114.25.21  
+        - 129.114.25.161  
+        - 129.114.25.181  
+        - 129.114.25.231  
+        - 129.114.27.31   
+        - 129.114.27.51   
+        - 129.114.27.91   
+        - 129.114.27.151
+    teams:
+        - instr_ta
+        - og_team1
+        - og_team2
+        - og_team3
+        - og_team4
+        - og_team5
+        - og_team6
+        - og_team7
+        - og_team8
+        - og_team9
+        - og_team10
+        - og_team11
+        - og_team12
+        - og_team13
+        - og_team14
+        - og_team15
+        - og_team16
+        - og_team17
+        - og_team18
+        - ol_team1
+        - ol_team2
+        - ol_team3
+        - ol_team4
+        - ol_team5
+
+# Cloud dictionary
+cloud:
+    platform: "chameleon"  # name of the cloud platform
+    name: CH-819381    # name of our cloud
+    inventory: MyChameleonVMs   # our inventory file
+    redo: MyRedoVMs   # our inventory file
+    user: cc   # the remote user
+    image: "CC-Ubuntu22.04"   # image used to populate the vm
+    key: F23_4383_5383 # key used to create the vm
+    security_groups:  # list of security groups common to our vms
+        - 667273fd-a67a-4ca2-8a68-3088220e6374 # default
+        - ENABLE_SSH
+        - ENABLE_ICMP
+        - ENABLE_HTTP_HTTPS
+        - ENABLE_K8S
+        - ENABLE_ZMQ_APPS
+        - ENABLE_5G
+        - ENABLE_PRIV_REGISTRY
+#        - ENABLE_SWARM
+#        - ENABLE_KAFKA
+#        - ENABLE_ZOOKEEPER
+#        - ENABLE_COUCHDB
+#        - ENABLE_SPARK
+    netid: 1a5ec947-4574-49b0-acef-59f74da87d21  # the network we will be part of
+    network: "CH-819381-net"
+    zone: "nova"
+    name_prefix: "CompNW-"   # we name our VMs with CompNW- as prefix
+    bastion_fip:
+        - 129.114.25.220
+
+    bastion_flavor: m1.large  # bastion
+    master_flavor: m1.large  # K8s masters 
+    worker_flavor: m1.medium  # cluster workers
+
+# open virtual switch
+ovs:
+  version: "3.2.1"   # stable release as of Fall 2023
+  unbound_version: "1.18.0"

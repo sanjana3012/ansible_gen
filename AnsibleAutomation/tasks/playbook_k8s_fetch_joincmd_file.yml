@@ -1,0 +1,27 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+# Modified: Spring 2024
+#
+# Here we retrieve the join command files from individual masters to the control machine
+# 
+  - name: "Set the file name"
+    ansible.builtin.set_fact:
+      fname: "join_cmd{{ ((groups[K8s['masters_inv']].index (inventory_hostname)  // K8s['masters'])+ 1)|string }}.sh"
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  - name: "Debug what file are we handling"
+    ansible.builtin.debug:
+      msg: "We are concerned with /home/{{ cloud['user'] }}/{{ fname }} file"  
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  - name: "Fetch the file"
+    ansible.builtin.fetch:
+      src: "/home/{{ cloud['user'] }}/{{ fname }}"
+      dest: "./"
+      flat: true   # This is very imp else a directory hierarchy gets created
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+...

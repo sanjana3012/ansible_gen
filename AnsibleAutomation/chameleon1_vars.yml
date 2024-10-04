@@ -1,0 +1,83 @@
+# In this file we define a dictionary of cloud variables for Chameleon
+# version of ubuntu. In reality, our playbook should be able to find these
+# parameters so that we do not tightly couple ourselves and the same
+# rest of the configs can apply to other archs. But for now we do it this way.
+ubuntu:
+    version: jammy
+    arch: amd64
+
+# Cloud dictionary
+cloud:
+    platform: "chameleon"  # name of the cloud platform
+    name: CH-822922    # name of our cloud
+    inventory: MyCloudVMs   # our inventory file
+    redo: MyRedoVMs   # our inventory file
+    user: cc   # the remote user
+    image: "CC-Ubuntu22.04"   # image used to populate the vm
+    bastion_key: F24_BASTION # key used to create the bastion VM
+    vm_key: F24_CS4287  # key used to create all other VMs
+    bastion_security_groups:  # list of security groups common to our vms
+        - dfc4191c-08b6-4d39-9317-0841aee2cc0c   # default
+        - ENABLE_SSH
+        - ENABLE_ICMP
+        - ENABLE_HTTP_HTTPS
+    vm_security_groups:  # list of security groups common to our vms
+        - dfc4191c-08b6-4d39-9317-0841aee2cc0c # default
+        - ENABLE_SSH
+        - ENABLE_ICMP
+        - ENABLE_HTTP_HTTPS
+        - ENABLE_K8S
+        - ENABLE_ZMQ_APPS
+        - ENABLE_PRIV_REGISTRY
+#        - ENABLE_5G
+#        - ENABLE_SWARM
+#        - ENABLE_KAFKA
+#        - ENABLE_ZOOKEEPER
+#        - ENABLE_COUCHDB
+#        - ENABLE_SPARK
+#    netid: b419e95b-944a-4eb4-a4ea-6259cb34e667  # the network we will be part of
+    bastion_network: "CH-822922-net"   # used by Bastion
+    vm_networks:
+        - "CH-822922-net"   # used by VMs
+    zone: "nova"
+    name_prefix: "Cloud-"   # we name our VMs with this prefix
+    hostvars_prefix: "CLOUD_"   # Used in storing hostvars for future use
+    bastion_fip:
+        - 129.114.27.250
+
+    bastion_flavor: m1.large  # bastion
+    master_flavor: m1.large  # K8s masters 
+    worker_flavor: m1.medium  # cluster workers
+
+# K8s cluster dictionary.
+K8s:
+    version: "v1.30" # As of summer 2024.
+    masters_inv: K8s_Masters   # our inventory file
+    workers_inv: K8s_Workers   # our inventory file
+    clusters: 1   # these many clusters 
+    masters: 1   # that many replicated masters per cluster
+    workers: 10   # that many workers per cluster
+    cni: "cilium"   # We are going to use this CNI. Choices are flannel, calico and canal
+    pod_network: "10.244.0.0/16"  # this is default used by Flannel (and canal)
+    ctr_cfg: config.toml   # containerd modified config.toml file for private registries
+    teams:
+        - instr
+        - ta
+        - team1
+        - team2
+# for now, only these many. We will change this when the class starts.
+
+# everything about docker
+Docker:
+    config: daemon.json  # docker config for private registries
+    priv_reg_inst_name: "MyRegistry"
+    priv_reg_image: "registry:latest"
+    priv_reg_port: 5000
+    
+helm:
+    version: 3.15.4
+    
+# open virtual switch
+ovs:
+  version: "3.3.0"   # stable release as of summer 2034
+  unbound_version: "1.19.3"  # there is some problem with configure script with version 1.20.0

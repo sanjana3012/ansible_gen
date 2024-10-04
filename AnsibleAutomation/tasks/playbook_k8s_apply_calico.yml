@@ -1,0 +1,109 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networking
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024 to also support calicoctl installation
+#
+# Here we apply Calico to the clusters. Moreover, this is applied to the primary replica
+# of each cluster only
+
+ # Add a special configuration file to Networkmanager to avoid conflicts. See
+ # https://docs.tigera.io/calico/latest/operations/troubleshoot/troubleshooting#configure-networkmanager
+ # Commented out because Network Manager is not present on our Ubuntu VMs
+  # - name: "Add calico.conf to NetworkManager configuration"
+  #   ansible.builtin.copy:
+  #     src: calico.conf
+  #     dest: /etc/NetworkManager/conf.d
+  #   become: true   # execute as root
+  #   when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # obtain the Calico operator
+  - name: "Obtain Calico operator manifest file"
+    ansible.builtin.uri:
+      url: https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+      dest: /home/{{ cloud['user'] }}/
+      force: true  # do not get a cached copy
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # Install the Calico operator 
+  - name: "Install the Calico operator"
+    kubernetes.core.k8s:
+      state: present  # does the kubectl create action
+      src: /home/{{ cloud['user'] }}/tigera-operator.yaml
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # # obtain the Calico custom resources
+  # - name: "Obtain Calico custom resources file"
+  #   ansible.builtin.uri:
+  #     url: https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
+  #     dest: /home/{{ cloud['user'] }}/
+  #     force: true  # do not get a cached copy
+  #   when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # # modify the POD address
+  # - name: "Replace default POD CIDR"
+  #   ansible.builtin.lineinfile:
+  #     path: /home/{{ cloud['user'] }}/custom-resources.yaml
+  #     regexp: "cidr: 192.168.0.0/16"
+  #     line: "cidr: {{ K8s['pod_network'] }}"
+
+  # Get a modified copy of custom resources
+  - name: "Obtain a modified Calico custom resources file"
+    ansible.builtin.copy:
+      src: ./custom-resources.yaml
+      dest: /home/{{ cloud['user'] }}/
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+      
+  # Install custom resouces for Calico
+  - name: "Install custom resources for Calico"
+    kubernetes.core.k8s:
+      state: present  # create
+      src: /home/{{ cloud['user'] }}/custom-resources.yaml
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # delete the downloaded operator file
+  - name: "Delete downloaded Calico operator file"
+    ansible.builtin.file:
+      path: /home/{{ cloud['user'] }}/tigera-operator.yaml
+      state: absent
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+      
+  # delete the downloaded custom resources file
+  - name: "Delete downloaded Calico custom resources file"
+    ansible.builtin.file:
+      path: /home/{{ cloud['user'] }}/custom-resources.yaml
+      state: absent
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+  # remove any older version of calicoctl
+  - name: "Remove existing calicoctl"
+    ansible.builtin.file:
+      path: "/usr/local/bin/calicoctl"
+      state: absent
+    become: true  # because we are putting this in /usr/local/bin
+
+  # remove any older version of calicoctl plugin
+  - name: "Remove existing calicoctl plugin"
+    ansible.builtin.file:
+      path: "/usr/local/bin/kubectl-calico"
+      state: absent
+    become: true  # because we are putting this in /usr/local/bin
+
+  # add calicoctl as an executable
+  - name: "Add calicoctl"
+    ansible.builtin.get_url:
+      url: https://github.com/projectcalico/calico/releases/download/v3.28.0/calicoctl-linux-amd64
+      dest: /usr/local/bin/calicoctl
+      mode: "ugo+rx"  # read and executable permissions
+    become: true  # because we are putting this in /usr/local/bin
+
+  # add calicoctl as kubectl plugin 
+  - name: "Add kubectl calico plugin"
+    ansible.builtin.get_url:
+      url: https://github.com/projectcalico/calico/releases/download/v3.28.0/calicoctl-linux-amd64
+      dest: /usr/local/bin/kubectl-calico
+      mode: "ugo+rx"  # read and executable permissions
+    become: true  # because we are putting this in /usr/local/bin
+

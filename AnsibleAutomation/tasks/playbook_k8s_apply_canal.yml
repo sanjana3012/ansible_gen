@@ -1,0 +1,43 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networking
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024
+#
+# Here we apply Calico to the clusters. Moreover, this is applied to the primary replica
+# of each cluster only. However, this one uses Flannel for networking and Calico for
+# policy
+
+
+  # remove any older version of the file
+  - name: "Remove any older version of the file"
+    ansible.builtin.file:
+      path: "/home/{{ cloud['user'] }}/canal.yaml"
+      state: absent
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # Recall that the shell command file was on the control machine. It has to be  copied here.
+  - name: "Copy appropriate join command file to remote host"
+    ansible.builtin.copy:
+      src: "./canal.yaml"
+      dest: "/home/{{ cloud['user'] }}/canal.yaml"
+      mode: u=rwx,g=r,o=r
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  # apply the file
+  - name: "Apply the canal.yaml file"
+    kubernetes.core.k8s:
+      state: present
+      src: /home/{{ cloud['user'] }}/canal.yaml
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+  - name: "Remove the downloaded yaml file"
+    ansible.builtin.file:
+      path: /home/{{ cloud['user'] }}/canal.yaml
+      state: absent
+    when: "((groups[K8s['masters_inv']].index (inventory_hostname) % K8s['masters']) == 0)"
+
+...

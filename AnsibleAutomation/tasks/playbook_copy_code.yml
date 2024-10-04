@@ -1,0 +1,23 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Spring 2021
+#
+# In this playbook we copy producer and consumer code to cloud VMs
+#
+  - name: "Copy consumer code to cloud VMs"
+    ansible.builtin.copy:
+      src: consumer.py
+      dest: "/home/{{ ansible_user }}/"
+
+  - name: "Copy topic code to cloud VMs"
+    ansible.builtin.copy:
+      src: topicdoc.py
+      dest: "/home/{{ ansible_user }}/"
+
+  - name: "Copy producer code to cloud VMs"
+    ansible.builtin.copy:
+      src: producer.py
+      dest: "/home/{{ ansible_user }}/"
+...

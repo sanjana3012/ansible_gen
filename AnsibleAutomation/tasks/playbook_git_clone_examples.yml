@@ -1,0 +1,17 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Spring 2021
+# Modified: Summer 2022
+#
+# In this playbook we git clone the scaffolding code for cloud computing course
+#
+  - name: "Git clone scaffolding code on destination (master)"
+    ansible.builtin.git:
+      repo: https://github.com/asgokhale/CloudComputingCourse.git
+      clone: yes  # this is default
+      dest: "/home/{{ cloud['user'] }}/CloudComputingCourse"
+
+...

@@ -1,0 +1,50 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Summer 2022
+#
+# This playbook will execute a command on the remote machine
+# Horizon Cloud VM or Chameleon VMs or AWS VMs
+# See https://docs.ansible.com/ansible/latest/collections/ansible/builtin/command_module.html
+
+# here we use the command module. There is also the shell module to do similar
+# outcome especially when you want to run a shell script, and there are more
+# complex arguments including executing in specific directories.
+
+- name: "Execute ZooKeeper"
+  vars:  
+    prefix: /home/{{ ansible_user }}/{{ kafka[version] }}
+  shell: "{{ prefix }}/bin/zookeeper-server-start.sh {{ prefix }}/config/zookeeper.properties"
+  when: ansible_facts['hostname'] == "gokhale-vm2"
+  async:  18000     # this is the number of seconds the task will run (say 5 hours)
+  poll: 0       # do not wait
+  register: async_results
+
+- name: Introduce a delay to ensure Zookeeper is up
+  wait_for:
+    timeout: 20   # wait 20 secs for the next play to start
+
+- name: Check the status of ZooKeeper with delay 10
+  async_status:
+    jid: '{{ async_results.ansible_job_id }}'
+  when: ansible_facts['hostname'] == "gokhale-vm2"
+  retries: 5   # check 5 times
+  delay: 10   # wait 10 secs
+
+- name: Execute kafka broker
+  vars:  
+    prefix: /home/{{ ansible_user }}/kafka_2.13-2.7.0
+  shell: "{{ prefix }}/bin/kafka-server-start.sh {{ prefix }}/config/server.properties"
+  async:  18000     # this is the number of seconds the task will run (say 5 hours)
+  poll: 0       # do not wait
+  register: async_results
+
+- name: Check the status of Kafka server with delay 10
+  async_status:
+    jid: '{{ async_results.ansible_job_id }}'
+  retries: 5   # check 5 times
+  delay: 10   # wait 10 secs
+...
+

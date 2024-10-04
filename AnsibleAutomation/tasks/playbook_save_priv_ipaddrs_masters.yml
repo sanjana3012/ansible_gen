@@ -1,0 +1,24 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# CS 6381: Distributed Systems
+# Author: Aniruddha Gokhale
+# Created: Fall 2023  
+# Modified: Spring 2024  
+#
+
+#  Here we save the IP addresses of the master and worker machines in our
+# inventory file
+
+  - name: "Add Priv IP addresses of Masters in our Masters inventory"
+    ansible.builtin.lineinfile:
+ #     path: ./Inventory/Remote  
+      path: "{{ inventory_dir }}/Remote"
+      insertbefore: '^\[K8s_Masters:vars'
+      firstmatch: true
+      line: "{{ hostvars[cloud['hostvars_prefix']+\"MASTERS\"]['cm_privip'][idx] }}"
+    loop: "{{ range (K8s['clusters']) | product (range (K8s['masters'])) }}"
+    loop_control:
+      index_var: idx
+      
+...

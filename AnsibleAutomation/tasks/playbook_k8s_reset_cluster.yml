@@ -1,0 +1,33 @@
+---
+#
+# EECS 4287/5287: Principles of Cloud Computing
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Summer 2022
+# Modified: Fall 2023
+#
+
+# In this playbook we terminate the running K8s cluster
+# To that end, we first reset it on workers and then master
+# We also get rid of the directories
+
+  - name: "Reset K8s cluster on this node"
+    ansible.builtin.shell:
+      cmd: kubeadm reset --force  # does not ask for yes/no
+    become: yes  # run as sudo
+
+  - name: "Remove the ~/.kube directory"
+    ansible.builtin.shell:
+      cmd: rm -fr /home/{{ cloud["user"] }}/.kube
+
+  - name: "Remove the /etc/cni/net.d directory"
+    ansible.builtin.shell:
+      cmd: rm -fr /etc/cni/net.d
+    become: yes  # run as sudo because this is in the root directory space
+
+  - name: "Remove the logs for pods from prev run"
+    ansible.builtin.shell:
+      cmd: rm -fr /var/log/pods/*
+    become: yes  # run as sudo because this is in the root directory space
+
+...

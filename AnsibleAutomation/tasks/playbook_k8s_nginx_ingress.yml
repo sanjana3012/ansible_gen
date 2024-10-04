@@ -1,0 +1,78 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networks
+# Author: Aniruddha Gokhale
+# Created: Fall 2023
+#
+
+# In this playbook we install the nginx ingress controller
+#
+# Here, we first clone the git repo of nginx ingress, and then
+# apply individual yaml files
+
+  - name: "Git clone nginx ingress"
+    ansible.builtin.git:
+      repo: https://github.com/nginxinc/kubernetes-ingress.git
+      clone: yes  # this is default
+      version: "release-3.3"
+      dest: "/home/{{ cloud['user'] }}/kubernetes-ingress"
+
+# Now apply one by one the different parts of nginx ingress
+
+  - name: "Create nginx namespace to be shared by all"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/ns-and-sa.yaml"
+
+  - name: "Create nginx RBAC to shared by all"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/rbac/rbac.yaml"
+
+  - name: "Create nginx config map"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/nginx-config.yaml"
+
+  - name: "Create nginx ingress class resource"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/ingress-class.yaml"
+
+  - name: "Create nginx virtual servers resource"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/crds/k8s.nginx.org_virtualservers.yaml"
+
+  - name: "Create nginx virtual servers routing resource"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/crds/k8s.nginx.org_virtualserverroutes.yaml"
+
+  - name: "Create nginx transport servers resource"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/crds/k8s.nginx.org_transportservers.yaml"
+
+  - name: "Create nginx Policy resource"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/crds/k8s.nginx.org_policies.yaml"
+
+  - name: "Create nginx TCP/UDP load balancing resource"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/common/crds/k8s.nginx.org_globalconfigurations.yaml"
+      
+  - name: "Delete existing nginx controller as daemonset"
+    kubernetes.core.k8s:
+      state: absent
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/daemon-set/nginx-ingress.yaml"
+
+  - name: "Create nginx controller as daemonset"
+    kubernetes.core.k8s:
+      state: present
+      src: "/home/{{ cloud['user'] }}/kubernetes-ingress/deployments/daemon-set/nginx-ingress.yaml"
+
+...      
+      

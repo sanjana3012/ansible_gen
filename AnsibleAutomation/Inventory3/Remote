@@ -1,0 +1,73 @@
+#
+# Author: Aniruddha Gokhale
+# CS4383-5383 Computer Networks
+# CS6381 Distributed Systems Principles
+# CS4287-5287 Cloud Computing
+# Created: Fall 2023
+# Modified: Spring 2024
+# Modified: Summer 2024
+# Modified: Fall 2024
+#
+# Based on the MyInventory file used in previous use cases and courses.
+#
+
+######################################################################
+# Used to indicate the cluster masters
+######################################################################
+[K8s_Masters]  # these mnemonics are obtained from our ~/.ssh/config
+
+[K8s_Masters:vars]
+# If we decide to use the jump host, then use the following. Note that all the options prior to the
+# ProxyCommand apply to the ssh command that is ultimately used to connect to that VM.
+# Because we are using a different key than the one for the bastion to connect to the VMs, we
+# supply even that key with the -i option.
+ansible_ssh_common_args='-i /home/gokhale/.ssh/gokhale_chameleoncloud.pem -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p cc@bastion2"'
+#ansible_connection=ssh
+#ansible_ssh_private_key_file=/home/gokhale/.ssh/S24_CS6381.pem
+#ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+######################################################################
+# Used to indicate the cluster workers
+######################################################################
+# The Chameleon Cloud private network we have created has subnet 172.16.x.y. So we are
+# referring to all the VMs that are going to be created here with this regexp. Naturally, we are not
+# creating all these VMs and hence when we use this pattern, in order not to try visiting
+# every IP address here, some of which will not be pointing to any VM, we use a conditional
+# in our playbooks where we visit the node if and only if the current "ansible_host" is in
+# a list of IP addresses that we have saved in a hostvars variable.
+
+
+[K8s_Workers]
+192.168.1.71
+192.168.1.168
+192.168.1.198
+192.168.1.205
+
+[K8s_Workers:vars]
+# If we decide to use the jump host, then use the following. Note that all the options prior to the
+# ProxyCommand apply to the ssh command that is ultimately used to connect to that VM.
+# Because we are using a different key than the one for the bastion to connect to the VMs, we
+# supply even that key with the -i option.
+ansible_ssh_common_args='-i /home/gokhale/.ssh/gokhale_chameleoncloud.pem -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p cc@bastion2"'
+
+
+[RedoVMs]
+
+[RedoVMs:vars]
+# If we decide to use the jump host, then use the following. Note that all the options prior to the
+# ProxyCommand apply to the ssh command that is ultimately used to connect to that VM.
+# Because we are using a different key than the one for the bastion to connect to the VMs, we
+# supply even that key with the -i option.
+ansible_ssh_common_args='-i /home/gokhale/.ssh/gokhale_chameleoncloud.pem -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p cc@bastion2"'
+
+[MyCloudVMs:children]
+K8s_Masters
+K8s_Workers
+
+[MyCloudVMs:vars]
+# If we decide to use the jump host, then use the following. Note that all the options prior to the
+# ProxyCommand apply to the ssh command that is ultimately used to connect to that VM.
+# Because we are using a different key than the one for the bastion to connect to the VMs, we
+# supply even that key with the -i option.
+ansible_ssh_common_args='-i /home/gokhale/.ssh/gokhale_chameleoncloud.pem -o StrictHostKeyChecking=no -o ProxyCommand="ssh -W %h:%p cc@bastion2"'
+

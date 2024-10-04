@@ -1,0 +1,35 @@
+---
+#
+# Author: Aniruddha Gokhale
+# Created: Fall 2020
+# Modified: Spring 2021
+# Modified: Summer 2022
+# Modified: Fall 2022
+# Modified: Fall 2023
+#
+
+# This playbook is to create VMs for students to use in
+# Networking Class
+#
+
+- name: "Play: Test Jump Host Installation"
+  hosts: nodes          # specified in the MyInventory file
+  remote_user:  cc      # note that the user is cc on Chameleon
+  become: yes  # we set it here instead of doing per task
+  gather_facts: no
+  collections:
+  - ansible-base
+  - community.general
+
+  tasks:    # the task to be performed
+  - name: "Install basic python-specific packages via aptitude"
+    ansible.builtin.apt:
+      name: "{{ item }}"
+      state: latest
+      update_cache: yes    # basically do a apt-get update
+    loop:
+      - python3-dev
+      - python3-pip
+ 
+...
+

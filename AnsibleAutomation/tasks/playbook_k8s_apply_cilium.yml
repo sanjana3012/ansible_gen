@@ -1,0 +1,25 @@
+---
+#
+# CS/ECE 4383/5383: Computer Networking
+# CS 6381: Distributed Systems Principles
+# Author: Aniruddha Gokhale
+# Created: Fall 2024
+#
+# Here we apply Cilium to the cluster
+
+# first make sure that Helm is installed. I think this is needed only on
+# cluster masters
+
+  - name: "Remove any prior version of helm"
+    ansible.builtin.file:
+      path: /usr/local/bin/helm
+      state: absent
+      
+  - name: "Unzip the Helm archive"
+    ansible.builtin.unarchive:
+      src: "/home/{{ local_user }}/Downloads/helm-v{{ helm['version'] }}-linux-arm.tar.gz
+      dest: "/home/{{ cloud['user'] }}/"
+      owner: "{{ cloud['user'] }}"
+      group: "{{ cloud['user'] }}"
+
+...

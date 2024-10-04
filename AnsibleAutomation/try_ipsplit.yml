@@ -1,0 +1,15 @@
+- name: "IP subnet"
+  hosts: 127.0.0.1
+  remote_user:  gokhale
+  gather_facts: no 
+  collections:
+  - ansible-base
+
+#### examples
+# Ipsubnet filter plugin with different queries.
+  vars:
+    address: 192.168.144.5
+  tasks:
+    - name: "split and change IP addr"
+      debug:
+        msg: "{{ address }} changed to {{ address.split('.')[0] }}.{{ (address.split('.')[1]|int + 1)|string }}.{{ address.split('.')[2] }}.{{ address.split('.')[3] }}."
