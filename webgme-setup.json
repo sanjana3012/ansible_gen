@@ -4,11 +4,18 @@
       "variableFileGen": {
         "src": "src/plugins/variableFileGen",
         "test": "test/plugins/variableFileGen"
+      },
+      "masterPlaybookgen": {
+        "src": "src/plugins/masterPlaybookgen",
+        "test": "test/plugins/masterPlaybookgen"
       }
     },
     "seeds": {
       "seed_1": {
         "src": "src/seeds/seed_1"
+      },
+      "seed_2": {
+        "src": "src/seeds/seed_2"
       }
     }
   },
