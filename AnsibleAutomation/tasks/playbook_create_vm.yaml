@@ -1,0 +1,27 @@
+  - name: "Create VM on the Cloud"
+    openstack.cloud.server:
+      cloud: "{{ cloud.project }}"   # which cloud
+      state: "{{ VM.state }}"   # i.e., create
+      availability_zone: "{{ VM.availability_zone }}"  # which availability zone
+      # a complex naming schemm using loop index variable
+      name: "{{ VM.name }}"
+      boot_from_volume: "{{ VM.boot_from_volume }}"
+      image: "{{ VM.image }}"  # indicates the image used to boot
+      flavor: "{{ VM.flavor }}" # what flavor
+      key_name: "{{ VM.key_name }}" # what key to use
+      security_groups:  "{{ VM.security_groups }}"  # which security groups
+      network: "{{ VM.network }}"  # network name
+      # nics: "net-id: {{ cloud['netid'] }}"  # which network interface (supply either network or nics)
+      #auto_ip: false   # we force an IP address (cannot be used when using floating_ips)
+      # floating_ips: "{{ cloud['basfip'] }}"    # what floating IP
+      reuse_ips: "{{ VM.reuse_ips }}"
+      wait: "{{ VM.wait }}" # this is the default
+      description: "{{ VM.description }}"
+      #timeout: 300 # wait 5 mins for the instance to get into active state
+
+
+###############################################################
+#  The connection waiting is usually right after the action
+###############################################################
+  - name : "Wait for Connection to VM"
+    ansible.builtin.wait_for_connection:

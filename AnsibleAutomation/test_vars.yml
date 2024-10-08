@@ -1,0 +1,31 @@
+# ubuntu:
+# K8s:
+cloud:
+    project: "CH-822922"
+    zone: Nova
+    redo: MyredoVMs
+    inventory: CloudVMs
+    user: cc
+    platform_name: chameleon
+
+VM:
+    security_groups:
+        - enable_ssh
+        - default
+    key_name: cc_f24
+    description: vm
+    availability_zone: Nova
+    name: team9-vm1
+    network: CH-822922-net
+    flavor: m1.medium
+    auto_ips: False
+    state: "present"
+    wait: yes
+    reuse_ips: False
+    boot_from_volume: False
+    image: CC-Ubuntu22.04
+    name_prefix: Cloud-
+
+
+
+
