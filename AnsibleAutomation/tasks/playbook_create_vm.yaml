@@ -1,6 +1,5 @@
-  - name: "Create VM on the Cloud"
+  - name: Create VM on the Cloud
     openstack.cloud.server:
-      cloud: "{{ cloud.project }}"   # which cloud
       state: "{{ VM.state }}"   # i.e., create
       availability_zone: "{{ VM.availability_zone }}"  # which availability zone
       # a complex naming schemm using loop index variable

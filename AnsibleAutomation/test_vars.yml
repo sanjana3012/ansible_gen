@@ -2,7 +2,7 @@
 # K8s:
 cloud:
     project: "CH-822922"
-    zone: Nova
+    zone: nova
     redo: MyredoVMs
     inventory: CloudVMs
     user: cc
@@ -14,7 +14,7 @@ VM:
         - default
     key_name: cc_f24
     description: vm
-    availability_zone: Nova
+    availability_zone: nova
     name: team9-vm1
     network: CH-822922-net
     flavor: m1.medium
