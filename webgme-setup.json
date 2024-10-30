@@ -8,6 +8,14 @@
       "masterPlaybookgen": {
         "src": "src/plugins/masterPlaybookgen",
         "test": "test/plugins/masterPlaybookgen"
+      },
+      "playGenerator": {
+        "src": "src/plugins/playGenerator",
+        "test": "test/plugins/playGenerator"
+      },
+      "PlaybookGenerator": {
+        "src": "src/plugins/PlaybookGenerator",
+        "test": "test/plugins/PlaybookGenerator"
       }
     },
     "seeds": {
@@ -16,6 +24,9 @@
       },
       "seed_2": {
         "src": "src/seeds/seed_2"
+      },
+      "seed_3": {
+        "src": "src/seeds/seed_3"
       }
     }
   },

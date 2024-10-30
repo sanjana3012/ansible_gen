@@ -18,14 +18,14 @@
       dest: "{{ item }}"
       state: absent
     with_fileglob:
-      - "/home/{{ cloud['user'] }}/kafka*"
+      - "/home/{{ ansible_user }}/kafka*"
 
   - name: "Unarchive the Kafka distribution"
     ansible.builtin.unarchive:
-      src: "/home/{{ local_user }}/Downloads/kafka_2.13-{{ Kafka['version'] }}.tgz"
-      dest: "/home/{{ cloud['user'] }}/"
-      owner: "{{ cloud['user'] }}"
-      group: "{{ cloud['user'] }}"
+      src: "/Users/{{ local_user }}/Downloads/kafka_2.13-{{ kafka['version'] }}.tgz"
+      dest: "/home/{{ ansible_user }}/"
+      owner: "{{ ansible_user }}"
+      group: "{{ ansible_user }}"
    
   # This is somewhat of a hack approach to get this to work
   # But the use of lineinfile is correct. We have to do this for multiple lines.

@@ -11,12 +11,12 @@
     ansible.builtin.file:
       path: /etc/containerd/config.toml
       state: absent
-    when: ansible_host  != "{{ cloud['nodes'][0] }}"
+    when: ansible_host not in groups['K8s_Masters']
       
   - name: "Next, create a default config.toml file"
     ansible.builtin.shell:
       cmd: containerd config default > /etc/containerd/config.toml
-    when: ansible_host  != "{{ cloud['nodes'][0] }}"
+    when: ansible_host not in groups['K8s_Masters']
 
   - name: "Insert information about the private registry"
     ansible.builtin.lineinfile:
@@ -27,8 +27,8 @@
       # replace modules somehow did not work.
       line: |
               [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
-                [plugins."io.containerd.grpc.v1.cri".registry.mirrors."192.168.2.196:5000"]
-                  endpoint = ["http://192.168.2.196:5000"]
-    when: ansible_host  != "{{ cloud['nodes'][0] }}"
+                [plugins."io.containerd.grpc.v1.cri".registry.mirrors."192.168.5.102:5000"]
+                  endpoint = ["http://192.168.5.102:5000"]
+    when: ansible_host not in groups['K8s_Masters']
 
 ...

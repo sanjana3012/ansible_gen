@@ -36,3 +36,4 @@ blob-local-storage/
 # Ignore .DS_Store and pycache
 .DS_Store
 **/__pycache__/
+.DS_Store

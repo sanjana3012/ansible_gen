@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/Users/sanjanadas/ansible_gen/AnsibleAutomation/myvenv"
+set -gx VIRTUAL_ENV "/Users/sanjanadas/cloud_computing_team9/AnsibleAutomation/myvenv"
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/bin" $PATH
