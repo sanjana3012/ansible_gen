@@ -7,7 +7,7 @@
 # Created: Fall 2020
 # Modified: Summer 2022
 # Modified: Fall 2023
-# Modified: Summer 2024  # some changes in K8s install
+# Modified: Summer 2024  # some changes in k8s install
 #
 # In this playbook we install Kubernetes
 #
@@ -40,9 +40,9 @@
 
 # Remove any older version of the apt repository
 # has changed in the latest installation instructions 
-  - name: "Remove any older K8s package repository"
+  - name: "Remove any older k8s package repository"
     ansible.builtin.apt_repository:
-      repo: deb https://pkgs.k8s.io/core:/stable:/{{ K8s['version'] }}/deb/ 
+      repo: deb https://pkgs.k8s.io/core:/stable:/{{ k8s['version'] }}/deb/ 
       filename: kubernetes   # gets stored under /etc/apt/sources.list.d/
       state: absent
       update_cache: yes  # this is default where the repo is updated
@@ -118,7 +118,7 @@
       mode: '0755'
       
 # But first delete any older version of gpg, if we have one.
-  - name: "Remove older version of K8s GPG apt key, if any"
+  - name: "Remove older version of k8s GPG apt key, if any"
     ansible.builtin.file:
       path: /etc/apt/keyrings/kubernetes-apt-keyring.gpg  # This is the new location and extension
       state: absent
@@ -129,14 +129,14 @@
 # GPG Key
   - name: "Add Kubernetes GPG apt key" 
     ansible.builtin.apt_key:
-      url: https://pkgs.k8s.io/core:/stable:/{{ K8s['version'] }}/deb/Release.key
+      url: https://pkgs.k8s.io/core:/stable:/{{ k8s['version'] }}/deb/Release.key
       keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
       state: present
     
 # Now add the repository (this has changed over the years)
   - name: "Add package repository"
     ansible.builtin.apt_repository:
-      repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ K8s['version'] }}/deb/ /"
+      repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ k8s['version'] }}/deb/ /"
       state: present
       filename: kubernetes
 

@@ -31,7 +31,17 @@
       - pandas
       - numpy
       - pyzmq
-#     - kafka-python
+      - kafka-python
+      - numpy
+      - scikit-learn
+      - Pillow
+      - tensorflow
+      - opencv-python
+      - requests
+      - thread6
+     
+
+
 #     - couchdb
 ...
 

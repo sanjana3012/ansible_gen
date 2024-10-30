@@ -58,6 +58,7 @@
 #      - network-manager # this seems to no longer be on Chameleon images
       - python3-apt   # do we need this? Things seem to hang a long time here.
       - default-jdk  # java
+      - default-jre  # java
       - jq           # needed during tainting
       - libzmq3-dev  # for ZMQ
       - libssl-dev  # these two needed for unbound package in OVS

@@ -1,14 +1,13 @@
 - name: "Play: Create VMs on Chameleon"
   hosts: LocalMC  # This corresponds to the alias in your inventory
-  remote_user: "carol"
+  remote_user: "{{ local_user }}"
   gather_facts: no
   become: false
 
   vars_files:
-    - /mnt/c/Users/carol/ansible_gen/AnsibleAutomation/test_vars.yml  # Adjust the path according to your directory structure
+    - Users/sanjanadas/ansible_gen/AnsibleAutomation/test_vars.yml  # Adjust the path according to your directory structure
 
   vars:
-    ansible_python_interpreter: /mnt/c/Users/carol/ansible_gen/AnsibleAutomation/caro_venv/bin/python3
-
+    ansible_python_interpreter: /Users/sanjanadas/ansible_gen/AnsibleAutomation/myvenv/bin/python3.11
   tasks:
     - import_tasks: tasks/playbook_create_vm.yaml
