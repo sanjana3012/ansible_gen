@@ -51,8 +51,8 @@ class inventoryFileGen(PluginBase):
         inventory_filename = self.get_current_config().get("file_name")
         if not inventory_filename:
             inventory_filename = self.core.get_attribute(self.active_node, "name")
-        inventory_file_path = inventory_folder_path + '/' + inventory_filename
-        print(inventory_file_path)
+        # inventory_file_path = inventory_folder_path + '/' + inventory_filename
+        # print(inventory_file_path)
 
         # Construct the inventory string
         self.Local_MC_info_generate()
@@ -61,7 +61,7 @@ class inventoryFileGen(PluginBase):
         self.inventory_string += self.hostnames_string
 
         # Write the inventory file
-        self.add_file(f"{inventory_file_path}.ini", str(self.inventory_string))
+        self.add_file(f"{inventory_filename}.ini", str(self.inventory_string))
         self.result_set_success(True)
 
     def get_objs_of_meta(self, metatype):
