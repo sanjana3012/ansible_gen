@@ -9,5 +9,6 @@ config.server.port = 8888;
 
 validateConfig(config);
 config.plugin.allowServerExecution = true;
+config.visualization.svgDirs.push("./src/svgs");
 module.exports = config;
 
