@@ -37,3 +37,6 @@ blob-local-storage/
 .DS_Store
 **/__pycache__/
 .DS_Store
+
+# Ansible workflow generated files
+ansible_workflows/
