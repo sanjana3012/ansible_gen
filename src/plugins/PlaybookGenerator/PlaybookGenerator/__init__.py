@@ -91,37 +91,45 @@ class PlaybookGenerator(PluginBase):
         
     
     def playbook_generate(self):
-        # Get all the nodes of type 'Playbook'
-        play_names,play_nodes=self.get_objs_of_meta('play')
-        for play_name,play_node in zip(play_names,play_nodes):
-            attribute_names=self.core.get_attribute_names(play_node)
-            self.playbook_string+=f"- name: {self.core.get_attribute(play_node,'name')}\n"
-            for attribute in attribute_names:
-                
-                if attribute=="collections":
-                    self.playbook_string+=f"  collections:\n"
-                    collections=self.core.get_attribute(play_node,attribute).split('\n')
-                    for collection in collections:
-                        self.playbook_string+=f"    - {collection}\n"
-                elif attribute!="name" and attribute!="file":
-                    self.playbook_string+=f"  {attribute}: {self.core.get_attribute(play_node,attribute)}\n"
+    # Initialize playbook string
+        self.playbook_string = ""
 
-            # connection_nodes,connection_names=self.get_objs_of_parent_meta('connection')
-            # connections=self.get_connection_info((connection_nodes))
-            # print("connections are: ",connection_names)
-            # for connection in connections:
-            #     print("hello")
-            #     if self.active_node in connection:
-            #         print("hello_part_2")
-            #         src_node=connection[0]
-            #         dst_node=connection[1]
-            #         print("src node is: ", self.core.get_attribute(src_node,"name"))
-            #         print("dst node is: ", self.core.get_attribute(dst_node,"name"))
-                
-            self.playbook_string+=f"  tasks:\n"
+        # Get all the nodes of type 'Playbook'
+        ordered_tasks = []
+        play_names, play_nodes = self.get_objs_of_meta('play')
+
+        for play_name, play_node in zip(play_names, play_nodes):
+            attribute_names = self.core.get_attribute_names(play_node)
+
+            # Add play-level attributes to the playbook string
+            self.playbook_string += f"- name: {self.core.get_attribute(play_node, 'name')}\n"
+            for attribute in attribute_names:
+                if attribute == "collections":
+                    self.playbook_string += f"  collections:\n"
+                    collections = self.core.get_attribute(play_node, attribute).split('\n')
+                    for collection in collections:
+                        self.playbook_string += f"    - {collection}\n"
+                elif attribute != "name" and attribute != "file":
+                    self.playbook_string += f"  {attribute}: {self.core.get_attribute(play_node, attribute)}\n"
+
+            # Add tasks section
+            self.playbook_string += f"  tasks:\n"
             for child_playbook in self.core.load_children(play_node):
-                self.playbook_string+=f"  - import_tasks: {self.core.get_attribute(child_playbook,'name')}\n" 
+                order_of_execution = self.core.get_attribute(child_playbook, 'order_of_execution')
+                print("Order of execution:", order_of_execution, "for node:", self.core.get_attribute(child_playbook, 'name'))
+                ordered_tasks.append((child_playbook, order_of_execution))
+
+            # Sort all tasks by order of execution after adding them
+            ordered_tasks.sort(key=lambda x: x[1])
+            print("Ordered tasks:", ordered_tasks)
+
+            # Add sorted tasks to the playbook string
+            for child_playbook, _ in ordered_tasks:
+                self.playbook_string += f"  - import_tasks: {self.core.get_attribute(child_playbook, 'name')}\n"
+
         print(self.playbook_string)
+
+
                 
             
 

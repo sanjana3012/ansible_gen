@@ -40,18 +40,24 @@ class variableFileGen(PluginBase):
         self.cloud_info_generate()
         self.vm_info_generate()
         self.docker_info_generate()
-        self.helms_info_generate()
-        self.ovs_info_generate()
+        # self.helms_info_generate()
+        # self.ovs_info_generate()
         self.kafka_info_generate()
 
         self.vars_string+=self.ubuntu_info_string
+        self.vars_string+="\n"
         self.vars_string+=self.k8s_info_string
+        self.vars_string+="\n"
         self.vars_string+=self.cloud_info_string
+        self.vars_string+="\n"
         self.vars_string+=self.vm_info_string
+        self.vars_string+="\n"
         self.vars_string+=self.docker_info_string
-        self.vars_string+=self.helms_info_string
-        self.vars_string+=self.ovs_info_string
+        self.vars_string+="\n"
+        # self.vars_string+=self.helms_info_string
+        # self.vars_string+=self.ovs_info_string
         self.vars_string+=self.kafka_info_string
+        self.vars_string+="\n"
 
         output_filename = self.get_current_config().get("file_name")
         if not output_filename:
@@ -139,19 +145,22 @@ class variableFileGen(PluginBase):
     def vm_info_generate(self):
         self.vm_info_string = ''
         vm_names,vm_nodes=self.get_objs_of_meta('VM')
-        self.vm_info_string +="VM:\n"
+        self.vm_info_string +="vm_list:\n"
         for node in vm_nodes:
             # print("attributes of vm", self.core.get_attribute_names(node))
             attribute_names=self.core.get_attribute_names(node)
+            self.vm_info_string+="\n"
+            self.vm_info_string+=f"  - name: {self.core.get_attribute(node,'name')}\n"
             for name in attribute_names:
-                if name == "security_groups":
-                        print("name: ",name)
-                        self.vm_info_string+=f"    {name}:\n"
-                        security_info=self.core.get_attribute(node,name).split('\n')
-                        for info in security_info:
-                            self.vm_info_string+=f"        - {info}\n"
-                else:
-                 self.vm_info_string+=f"    {name}: {self.core.get_attribute(node,name)}\n"
+                if name!="name" :
+                    if name == "security_groups":
+                            print("name: ",name)
+                            self.vm_info_string+=f"    {name}:\n"
+                            security_info=self.core.get_attribute(node,name).split('\n')
+                            for info in security_info:
+                                self.vm_info_string+=f"        - {info}\n"
+                    else:
+                        self.vm_info_string+=f"    {name}: {self.core.get_attribute(node,name)}\n"
 
     def docker_info_generate(self):
         self.docker_info_string = ''

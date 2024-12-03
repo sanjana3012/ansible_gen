@@ -36,6 +36,20 @@ class inventoryFileGen(PluginBase):
 
         self.children = self.core.load_children(self.active_node)   # Get children of inventory
 
+        # Get inventory folder from parent of inventory node
+        inventory_folder = self.core.get_parent(self.active_node)
+        inventory_folder_path = self.core.get_attribute(inventory_folder, 'path')
+        # Create the inventory folder if it does not exist - if writing to filesystem instead of WebGME
+        #if not os.path.exists(inventory_folder_path) or not os.path.isdir(inventory_folder_path):
+        #    os.mkdir(inventory_folder_path)
+
+        # Set up the output config file (i.e. the inventory file)
+        inventory_filename = self.get_current_config().get("file_name")
+        if not inventory_filename:
+            inventory_filename = self.core.get_attribute(self.active_node, "name")
+        # inventory_file_path = inventory_folder_path + '/' + inventory_filename
+        # print(inventory_file_path)
+
         # Construct the inventory string
         self.Local_MC_info_generate()
         self.Hostnames_info_generate()
