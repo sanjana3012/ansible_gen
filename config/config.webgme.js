@@ -12,6 +12,7 @@ config.seedProjects.basePaths.push(__dirname + '/../src/seeds/seed_1');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/seed_2');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/seed_3');
 config.seedProjects.basePaths.push(__dirname + '/../src/seeds/seed_4');
+config.seedProjects.basePaths.push(__dirname + '/../src/seeds/seed_5');
 
 
 

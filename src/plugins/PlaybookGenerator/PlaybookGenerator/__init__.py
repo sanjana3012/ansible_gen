@@ -93,7 +93,7 @@ class PlaybookGenerator(PluginBase):
     def playbook_generate(self):
     # Initialize playbook string
         self.playbook_string = ""
-
+        
         # Get all the nodes of type 'Playbook'
         ordered_tasks = []
         play_names, play_nodes = self.get_objs_of_meta('play')
