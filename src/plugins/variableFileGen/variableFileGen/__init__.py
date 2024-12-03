@@ -28,11 +28,6 @@ class variableFileGen(PluginBase):
 
         logger.info('ActiveNode at "{0}" has name {1}'.format(core.get_path(active_node), name))
 
-        # core.set_attribute(active_node, 'name', 'newName')
-
-        commit_info = self.util.save(root_node, self.commit_hash, 'master', 'Python plugin updated the model')
-        logger.info('committed :{0}'.format(commit_info))
-
         self.children=[]
         for child in self.core.load_children(self.active_node):
              self.children.append(child)
@@ -64,11 +59,20 @@ class variableFileGen(PluginBase):
         self.vars_string+=self.kafka_info_string
         self.vars_string+="\n"
 
-        # Return the config file
         output_filename = self.get_current_config().get("file_name")
         if not output_filename:
-            output_filename = self.core.get_attribute(self.active_node, "name")
-        self.add_file(f"{output_filename}.yaml", str(self.vars_string))
+            output_filename = core.get_attribute(self.active_node, "name")
+            
+        # Add file and get hash
+        file_hash = self.add_file(f"{output_filename}.yaml", str(self.vars_string))
+        
+        # Store the hash in the node's registry
+        core.set_registry(active_node, 'generatedFileHash', file_hash)
+        logger.info(f'Generated file hash: {file_hash}')
+
+        commit_info = self.util.save(root_node, self.commit_hash, 'master', 'Python plugin updated the model')
+        logger.info('committed :{0}'.format(commit_info))
+        
         self.result_set_success(True)
 
     def get_objs_of_meta(self,metatype):

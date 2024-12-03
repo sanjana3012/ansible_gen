@@ -26,11 +26,7 @@ class inventoryFileGen(PluginBase):
         active_node = self.active_node
 
         name = core.get_attribute(active_node, 'name')
-
         logger.info('ActiveNode at "{0}" has name {1}'.format(core.get_path(active_node), name))
-
-        commit_info = self.util.save(root_node, self.commit_hash, 'master', 'Python plugin updated the model')
-        logger.info('committed :{0}'.format(commit_info))
 
         # -------------------------------------------------------------------
 
@@ -60,8 +56,20 @@ class inventoryFileGen(PluginBase):
         self.inventory_string += self.local_MC_string + '\n'
         self.inventory_string += self.hostnames_string
 
-        # Write the inventory file
-        self.add_file(f"{inventory_filename}.ini", str(self.inventory_string))
+        # Add file and store hash
+        output_filename = self.get_current_config().get("file_name")
+        if not output_filename:
+            output_filename = core.get_attribute(active_node, "name")
+            
+        file_hash = self.add_file(f"{output_filename}.ini", str(self.inventory_string))
+        
+        # Store hash in registry
+        core.set_registry(active_node, 'generatedFileHash', file_hash)
+        logger.info(f'Generated file hash: {file_hash}')
+
+        commit_info = self.util.save(root_node, self.commit_hash, 'master', 'Generated inventory and stored hash')
+        logger.info('committed :{0}'.format(commit_info))
+        
         self.result_set_success(True)
 
     def get_objs_of_meta(self, metatype):
