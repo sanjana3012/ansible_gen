@@ -43,15 +43,15 @@ class ansibleWorkflow(PluginBase):
                     node_type = core.get_meta_type(child)
                     type_name = core.get_attribute(node_type, 'name')
                     
-                    if type_name == 'inventory_instance':
+                    if type_name == 'inventory':
                         extension = '.ini'
                         output_file = os.path.join(base_dir, f'{node_name}{extension}')
                         inventory_path = output_file
-                    elif type_name == 'playbook_instance':
+                    elif type_name == 'playbook':
                         extension = '.yml'
                         output_file = os.path.join(base_dir, f'{node_name}{extension}')
                         playbook_path = output_file
-                    elif type_name == 'variable_file_instance':
+                    elif type_name == 'variable_file':
                         extension = '.yml'
                         output_file = os.path.join(base_dir, f'{node_name}{extension}')
                         vars_path = output_file
@@ -66,19 +66,22 @@ class ansibleWorkflow(PluginBase):
                     return
 
         # Start ansible
+    # Start ansible
         if inventory_path and playbook_path and vars_path:
             try:
                 # Change to workflow directory
                 os.chdir(base_dir)
-                
+
                 # Create ansible-playbook command
                 cmd = ['ansible-playbook', '-i', os.path.basename(inventory_path)]
                 cmd.extend(['-e', f'@{os.path.basename(vars_path)}'])
                 cmd.append(os.path.basename(playbook_path))
-                
-                logger.info(f'Executing Ansible command: {" ".join(cmd)}')
-                
-                # Run master-playbook
+                cmd.append('-vvv')  # Add verbose flag for detailed output
+
+                logger.info(f"Current working directory: {os.getcwd()}")
+                logger.info(f"Ansible command: {' '.join(cmd)}")
+
+                # Run the ansible-playbook command
                 process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.PIPE,
@@ -86,15 +89,17 @@ class ansibleWorkflow(PluginBase):
                     universal_newlines=True
                 )
                 stdout, stderr = process.communicate()
-                
+
                 if process.returncode == 0:
                     logger.info('Ansible playbook executed successfully')
-                    logger.info(f'Output:\n{stdout}')
+                    logger.info(f'STDOUT:\n{stdout}')
                     self.create_message(active_node, 'Ansible playbook executed successfully', 'info')
                 else:
-                    logger.error(f'Ansible playbook failed:\n{stderr}')
+                    logger.error('Ansible playbook failed')
+                    logger.error(f'STDERR:\n{stderr}')
+                    logger.error(f'STDOUT:\n{stdout}')
                     self.create_message(active_node, f'Ansible playbook failed: {stderr}', 'error')
-                    
+
             except Exception as e:
                 logger.error(f'Failed to execute Ansible: {str(e)}')
                 self.create_message(active_node, f'Failed to execute Ansible: {str(e)}', 'error')
@@ -103,6 +108,7 @@ class ansibleWorkflow(PluginBase):
             logger.error('Missing required files for Ansible execution')
             self.create_message(active_node, 'Missing required inventory, vars, or playbook files', 'error')
             return
+
 
         commit_info = self.util.save(root_node, self.commit_hash, 'master', 'Python plugin updated the model')
         logger.info('committed :{0}'.format(commit_info))
