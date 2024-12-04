@@ -115,13 +115,16 @@ class PlaybookGenerator(PluginBase):
             # Add play-level attributes to the playbook string
             self.playbook_string += f"- name: {self.core.get_attribute(play_node, 'name')}\n"
             for attribute in attribute_names:
-                if attribute == "collections":
+                if attribute == "collections" and self.core.get_attribute(play_node, attribute):
                     self.playbook_string += f"  collections:\n"
                     collections = self.core.get_attribute(play_node, attribute).split('\n')
                     for collection in collections:
                         self.playbook_string += f"    - {collection}\n"
-                elif attribute != "name" and attribute != "file":
+                elif attribute=="path_to_ansible_python_interpreter" and self.core.get_attribute(play_node, attribute):
+                    self.playbook_string += f"  vars:\n    ansible_python_interpreter: {self.core.get_attribute(play_node, attribute)}\n"
+                elif attribute != "name" and attribute != "file" and attribute != "order_of_execution" and attribute!="path_to_ansible_python_interpreter" and self.core.get_attribute(play_node, attribute):
                     self.playbook_string += f"  {attribute}: {self.core.get_attribute(play_node, attribute)}\n"
+
 
             # Add tasks section
             self.playbook_string += f"  tasks:\n"
@@ -136,7 +139,7 @@ class PlaybookGenerator(PluginBase):
 
             # Add sorted tasks to the playbook string
             for child_playbook, _ in ordered_tasks:
-                self.playbook_string += f"  - import_tasks: {tasks_path}{self.core.get_attribute(child_playbook, 'name')}.yml\n"
+                self.playbook_string += f"    - import_tasks: {tasks_path}{self.core.get_attribute(child_playbook, 'name')}.yml\n"
 
         print(self.playbook_string)
 

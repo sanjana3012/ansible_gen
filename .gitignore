@@ -26,6 +26,8 @@ coverage
 
 #myvenv
 myvenv/
+
+ansible_workflows/Ansible Worflows/ansiblevenv
 # Compiled binary addons (http://nodejs.org/api/addons.html)
 build/Release
 
