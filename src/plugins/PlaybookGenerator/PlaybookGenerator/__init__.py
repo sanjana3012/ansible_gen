@@ -4,6 +4,7 @@ The PlaybookGenerator-class is imported from both run_plugin.py and run_debug.py
 """
 import sys
 import logging
+import os
 from webgme_bindings import PluginBase
 
 # Setup a logger
@@ -93,7 +94,17 @@ class PlaybookGenerator(PluginBase):
     def playbook_generate(self):
     # Initialize playbook string
         self.playbook_string = ""
+        ansible_workflow_node=self.core.get_parent(self.active_node)
+        if self.core.get_attribute(ansible_workflow_node,'path_to_ansible_automation_root'):
+            #print("Path to Ansible Automation root found in attribute")
+            tasks_path=self.core.get_attribute(ansible_workflow_node,'path_to_ansible_automation_root')+"/tasks/"
+        elif not self.core.get_attribute(ansible_workflow_node,'path_to_ansible_automation_root'):
+            #print("made up a path")
+            tasks_path=str(os.getcwd())+"/AnsibleAutomation/tasks/"
+        else:
+            logger.error("Path to Ansible Automation root not found")
         
+        print("tasks_path:",tasks_path)
         # Get all the nodes of type 'Playbook'
         ordered_tasks = []
         play_names, play_nodes = self.get_objs_of_meta('play')
@@ -125,7 +136,7 @@ class PlaybookGenerator(PluginBase):
 
             # Add sorted tasks to the playbook string
             for child_playbook, _ in ordered_tasks:
-                self.playbook_string += f"  - import_tasks: {self.core.get_attribute(child_playbook, 'name')}\n"
+                self.playbook_string += f"  - import_tasks: {tasks_path}{self.core.get_attribute(child_playbook, 'name')}.yml\n"
 
         print(self.playbook_string)
 
