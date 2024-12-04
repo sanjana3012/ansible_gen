@@ -37,6 +37,9 @@
       },
       "seed_5": {
         "src": "src/seeds/seed_5"
+      },
+      "seed_6": {
+        "src": "src/seeds/seed_6"
       }
     }
   },
