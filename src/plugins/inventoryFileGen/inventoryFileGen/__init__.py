@@ -91,13 +91,13 @@ class inventoryFileGen(PluginBase):
         self.local_MC_string += self.core.get_attribute(nodes[0], 'ip') + ' '
 
         # Write any variables for the local machine
+        self.local_MC_string += '\n\n[' + self.core.get_attribute(nodes[0], 'name') + ':vars]\n'
         attributes = self.core.get_attribute_names(nodes[0])
         for attribute in attributes:
             value = self.core.get_attribute(nodes[0], attribute)
             if (value) and (attribute != 'name') and (attribute != 'ip'):
                 self.local_MC_string += attribute + '=' + str(value) + '\n'
-
-        #print(self.local_MC_string)
+        print('\n', self.local_MC_string)
 
     def Hostnames_info_generate(self):
         names, nodes = self.get_objs_of_meta('Hostname')
